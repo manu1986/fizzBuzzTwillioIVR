@@ -56,6 +56,7 @@ Improvements
 ======================
 <ul>
    <li>Testing... Unit Test...!!!</li>
+   <li>Pass code through findbugs and checkstyle</li>
    <li>Better frontend</li>
    <li>Better exception handling</li>
    <li>mysql table optimizations using querys explain plan</li>
