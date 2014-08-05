@@ -22,12 +22,12 @@ Design
 =====================
 <ol>
 <li> User enters the call delay and number to call and submits the form.</li>
-<li> If the call delay is 0 then Twillio API for making a call are used to call the supplied number.<br /> &nbsp;&nbsp;&nbsp;&nbsp;Twillio's API returns a call session id which we save in the database with other call related info.</li>
-<li> If the call delay is greater than 0 and less than 60 then call related details are saved in database for scheduler to use</li>
-<li> Once the call is connected, twillio contacts FizzBuzz App to get a menu which is read out to user </li>
-<li> User enters a number on their phone</li>
-<li> Twillio supplies this number to FizzBuzz App and a fizzbuzz sequence is returned as response from the FizzBuzz App</li>
-<li> FizzBuzz App updates the database row for this call with the fizzbuzz number provided by twillio. Calls's session id is used to find the row in the database correspoonding to this call.</li>
+<li> If the call delay is 0 then Twillio API for making a call are used to call the supplied number.<br /> &nbsp;&nbsp;&nbsp;&nbsp;2.1. Twillio's API returns a call session id which we save in the database with other call related info. <br />
+&nbsp;&nbsp;&nbsp;&nbsp;2.2. If the call delay is greater than 0 and less than 60 then call related details are saved in database for scheduler to use<br />
+&nbsp;&nbsp;&nbsp;&nbsp;2.3. Once the call is connected, twillio contacts FizzBuzz App to get a menu which is read out to user<br />
+&nbsp;&nbsp;&nbsp;&nbsp;2.4. User enters a number on their phone<br />
+&nbsp;&nbsp;&nbsp;&nbsp;2.5. Twillio supplies this number to FizzBuzz App and a fizzbuzz sequence is returned as response from the FizzBuzz App<br />
+&nbsp;&nbsp;&nbsp;&nbsp;2.6. FizzBuzz App updates the database row for this call with the fizzbuzz number provided by twillio. Calls's session id is used to find the row in the database correspoonding to this call.<br />
 </ol>
 
 
