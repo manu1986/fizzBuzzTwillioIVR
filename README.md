@@ -55,6 +55,7 @@ Workflow
 Improvements
 ======================
 <ul>
+   <li>Testing... Unit Test...!!!</li>
    <li>Better frontend</li>
    <li>Better exception handling</li>
    <li>mysql table optimizations using querys explain plan</li>
