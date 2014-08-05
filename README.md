@@ -28,7 +28,8 @@ Design
 &nbsp;&nbsp;&nbsp;&nbsp;2.4. User enters a number on their phone<br />
 &nbsp;&nbsp;&nbsp;&nbsp;2.5. Twillio supplies this number to FizzBuzz App and a fizzbuzz sequence is returned as response from the FizzBuzz App<br />
 &nbsp;&nbsp;&nbsp;&nbsp;2.6. FizzBuzz App updates the database row for this call with the fizzbuzz number provided by twillio. Calls's session id is used to find the row in the database correspoonding to this call.<br /></li>
-<li>If the call delay is greater than 0 then the call details are recorded in the database.</li>
+<li>If the call delay is greater than 0 then the call details are recorded in the database.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;3.1. Scheduler runs after every 5 seconds and finds all call details for calls whose delay time has expired (Time to place call on is stored in DB in form of time from unix epoch) <br /></li>
 </ol>
 
 
@@ -40,4 +41,5 @@ Improvements
    <li>Database connection pooling</li>
    <li>Better error status's </li>
    <li>Better frontend</li>
+   <li>Feature in frontend to show already placed calls in paginated form.</li>
 </ul>
