@@ -24,8 +24,11 @@ How to Run?
 <ul>
 <li> We need gradle version - 1.12 installed to build the project</li>
 <li> To generate an eclipse workspace do "gradle eclipse" in the directory which has the build.gralde file</li>
-<li> Database configuration and Twillio account configuration need to be done in application.properties</li>
+<li> Database configuration and Twillio account configuration need to be done in /src/main/resources/application.properties</li>
+<li> sql script for recreating the database on your machine is in /src/main/resources/fizzbuzz_db.sql</li>
 <li> To start tomcat and deploy the project on it do "gradle tomcatRunWar"</li>
+<li> To build the project do "gradle build"</li>
+<li> To clean the project do "gradle clean"</li>
 </ul>
 
 
