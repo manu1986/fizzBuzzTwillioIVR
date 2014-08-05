@@ -27,7 +27,8 @@ Design
 &nbsp;&nbsp;&nbsp;&nbsp;2.3. Once the call is connected, twillio contacts FizzBuzz App to get a menu which is read out to user<br />
 &nbsp;&nbsp;&nbsp;&nbsp;2.4. User enters a number on their phone<br />
 &nbsp;&nbsp;&nbsp;&nbsp;2.5. Twillio supplies this number to FizzBuzz App and a fizzbuzz sequence is returned as response from the FizzBuzz App<br />
-&nbsp;&nbsp;&nbsp;&nbsp;2.6. FizzBuzz App updates the database row for this call with the fizzbuzz number provided by twillio. Calls's session id is used to find the row in the database correspoonding to this call.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;2.6. FizzBuzz App updates the database row for this call with the fizzbuzz number provided by twillio. Calls's session id is used to find the row in the database correspoonding to this call.<br /></li>
+<li>If the call delay is greater than 0 then the call details are recorded in the database.</li>
 </ol>
 
 
