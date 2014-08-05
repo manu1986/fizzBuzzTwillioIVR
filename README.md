@@ -34,7 +34,7 @@ Workflow
 <p>3.1. Scheduler runs after every 5 seconds and finds all call details for calls whose delay time has expired (Time to place call on is stored in DB in form of time from unix epoch) and for which the fizzbuzz number has not already been provided by user </p>
 <p>3.2. Scheduler places the call using twillio in the manner described above.</p>
 <p>3.3. Scheduler updates the record for the call with the call session id and fizzbuzz number</p>
-<li />
+</li>
 </ol>
 
 
