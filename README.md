@@ -56,6 +56,7 @@ Improvements
 ======================
 <ul>
    <li>Testing... Unit Test...!!!</li>
+   <li>Remove some hardcoding at places</li>
    <li>Pass code through findbugs and checkstyle</li>
    <li>Better frontend</li>
    <li>Better exception handling</li>
