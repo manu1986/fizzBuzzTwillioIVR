@@ -16,7 +16,11 @@ Technologies
    <li>MySql database</li>
    <li>Twillio Java SDK</li>
    <li>log4j for logging</li>
+   <li>gradle for build system</li>
 </ol>
+
+How to Run?
+=====================
 
 Workflow
 =====================
