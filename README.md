@@ -21,6 +21,13 @@ Technologies
 
 How to Run?
 =====================
+<ul>
+<li> We need gradle version - 1.12 installed to build the project</li>
+<li> To generate an eclipse workspace do "gradle eclipse" in the directory which has the build.gralde file</li>
+<li> Database configuration and Twillio account configuration need to be done in application.properties</li>
+<li> To start tomcat and deploy the project on it do "gradle tomcatRunWar"</li>
+</ul>
+
 
 Workflow
 =====================
