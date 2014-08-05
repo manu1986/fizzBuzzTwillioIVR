@@ -18,7 +18,7 @@ Technologies
    <li>log4j for logging</li>
 </ol>
 
-Design
+Workflow
 =====================
 <ol>
 <li> User enters the call delay and number to call and submits the form.</li>
@@ -29,7 +29,9 @@ Design
 &nbsp;&nbsp;&nbsp;&nbsp;2.5. Twillio supplies this number to FizzBuzz App and a fizzbuzz sequence is returned as response from the FizzBuzz App<br />
 &nbsp;&nbsp;&nbsp;&nbsp;2.6. FizzBuzz App updates the database row for this call with the fizzbuzz number provided by twillio. Calls's session id is used to find the row in the database correspoonding to this call.<br /></li>
 <li>If the call delay is greater than 0 then the call details are recorded in the database.<br />
-&nbsp;&nbsp;&nbsp;&nbsp;3.1. Scheduler runs after every 5 seconds and finds all call details for calls whose delay time has expired (Time to place call on is stored in DB in form of time from unix epoch) <br /></li>
+&nbsp;&nbsp;&nbsp;&nbsp;3.1. Scheduler runs after every 5 seconds and finds all call details for calls whose delay time has expired (Time to place call on is stored in DB in form of time from unix epoch) and for which the fizzbuzz number has not already been provided by user <br />
+&nbsp;&nbsp;&nbsp;&nbsp;3.2. Scheduler places the call using twillio in the manner described above.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;3.3. Scheduler updates the record for the call with the call session id and fizzbuzz number</li>
 </ol>
 
 
