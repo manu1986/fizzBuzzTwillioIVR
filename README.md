@@ -55,10 +55,11 @@ Workflow
 Improvements
 ======================
 <ul>
+   <li>Better frontend</li>
    <li>Better exception handling</li>
    <li>mysql table optimizations using querys explain plan</li>
    <li>Database connection pooling</li>
    <li>Better error status's </li>
-   <li>Better frontend</li>
-   <li>Feature in frontend to show already placed calls in paginated form.</li>
+   <li>Feature in frontend to show already placed calls in paginated form</li>
+   <li>improve comments and logging</li>
 </ul>
