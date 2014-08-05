@@ -38,14 +38,14 @@ Workflow
 <li> User enters the call delay and number to call and submits the form.</li>
 <li> If the call delay is 0 then Twillio API for making a call are used to call the supplied number.
 <p>2.1. Twillio's API returns a call session id which we save in the database with other call related info. </p>
-<p>2.2. If the call delay is greater than 0 and less than 60 then call related details are saved in database for scheduler to use</p>
+<p>2.2. If the call delay is greater than 0 and less than 60 then call related details are saved in database for scheduler to use. The call's session id is saved at "NA".</p>
 <p>2.3. Once the call is connected, twillio contacts FizzBuzz App to get a menu which is read out to user</p>
 <p>2.4. User enters a number on their phone</p>
 <p>2.5. Twillio supplies this number to FizzBuzz App and a fizzbuzz sequence is returned as response from the FizzBuzz App</p>
 <p>2.6. FizzBuzz App updates the database row for this call with the fizzbuzz number provided by twillio. Calls's session id is used to find the row in the database correspoonding to this call.</p>
 </li>
 <li>If the call delay is greater than 0 then the call details are recorded in the database.<br />
-<p>3.1. Scheduler runs after every 5 seconds and finds all call details for calls whose delay time has expired (Time to place call on is stored in DB in form of time from unix epoch) and for which the fizzbuzz number has not already been provided by user </p>
+<p>3.1. Scheduler runs periodically every 5 seconds and finds all call details for calls whose delay time has expired (Time to place call on is stored in DB in form of time from unix epoch) and for which the session id is "NA" </p>
 <p>3.2. Scheduler places the call using twillio in the manner described above.</p>
 <p>3.3. Scheduler updates the record for the call with the call session id and fizzbuzz number</p>
 </li>
