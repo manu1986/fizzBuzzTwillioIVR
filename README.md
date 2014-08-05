@@ -8,7 +8,7 @@ This is a Spring 3 MVC WebApp which does the following:<br />
 
 Users can also schedule calls for later (1min - 60mins) too.
 
-<h3>Technologies</h3>
+Technologies
 ======================
 <ol>
    <li>Spring 3 MVC</li>
@@ -18,11 +18,11 @@ Users can also schedule calls for later (1min - 60mins) too.
    <li>log4j for logging</li>
 </ol>
 
-<h3>Design</h3>
+Design
 =====================
 
 
-<h3>Improvements</h3>
+Improvements
 ======================
 <ul>
    <li>Better exception handling</li>
