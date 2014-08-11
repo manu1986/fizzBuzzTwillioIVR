@@ -1,14 +1,12 @@
 package com.nowoncloud.fizzbuzz;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import org.apache.log4j.Logger;
-import org.slf4j.helpers.MessageFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -37,13 +35,19 @@ public class CallController {
 	FizzBuzzGameService fizzBuzzGameService;
 	
 	@RequestMapping(value = "/", method = RequestMethod.GET)
-	public String home(Model model) {
+	public String index(Model model) {
+		model.addAttribute("call", new FizzBuzzCall());
+		return "index";
+	}
+	
+	@RequestMapping(value = "/call", method = RequestMethod.GET)
+	public String getCallDetails(Model model) {
 		model.addAttribute("call", new FizzBuzzCall());
 		return "index";
 	}
 	
 	@RequestMapping(value = "/call", method = RequestMethod.POST)
-	public String call(@Valid @ModelAttribute("call") FizzBuzzCall call, BindingResult bindingResult, Model model) throws TwilioRestException {
+	public String scheduleCall(@Valid @ModelAttribute("call") FizzBuzzCall call, BindingResult bindingResult, Model model) throws TwilioRestException {
 		logger.info("Got request to schedule call " + call.toString());
 		if (bindingResult.hasErrors()) {
             return "index";
@@ -53,14 +57,14 @@ public class CallController {
         return "callSuccess";
 	}
 
-	@RequestMapping(value = "/GameMenu", method = RequestMethod.GET)
+	@RequestMapping(value = "/fizzbuzz", method = RequestMethod.GET)
 	public void readGameMenu(HttpServletRequest request, HttpServletResponse response) throws TwiMLException, IOException {
 		logger.info("Got request for game menu " + request.toString());
 		response.setContentType("application/xml");
 		response.getWriter().print(callService.respondWithGameMenu());
 	}
 	
-	@RequestMapping(value = "/GameMenuResponse", method = RequestMethod.POST)
+	@RequestMapping(value = "/fizzbuzz", method = RequestMethod.POST)
 	public void getGameMenuResponse(HttpServletRequest request, HttpServletResponse response) throws IOException, TwiMLException {
 		logger.info("Got request for fizzbuzz sequence " + request.toString());
 		response.setContentType("application/xml");

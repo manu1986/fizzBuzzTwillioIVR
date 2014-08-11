@@ -48,7 +48,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 		List<NameValuePair> params = new ArrayList<NameValuePair>();  
 		params.add(new BasicNameValuePair("To", fizzBuzzCall.getToNumber()));
 		params.add(new BasicNameValuePair("From", env.getProperty("com.nowoncloud.fizzbuzz.twillio.fromNumber")));
-		params.add(new BasicNameValuePair("Url", env.getProperty("com.nowoncloud.fizzbuzz.twillio.callBackUrl")));
+		params.add(new BasicNameValuePair("Url", env.getProperty("com.nowoncloud.fizzbuzz.twillio.getMenu")));
 		params.add(new BasicNameValuePair("Method", "GET"));  
 		CallFactory callFactory = twilioRestClient.getAccount().getCallFactory(); 
 	    Call twillioCall;
@@ -103,7 +103,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	    Say say = new Say(env.getProperty("com.nowoncloud.fizzbuzz.twillio.callMenuMessage"));
 	    say.setVoice(env.getProperty("com.nowoncloud.fizzbuzz.twillio.callVoice"));
         gather.setMethod("POST");
-	    gather.setAction(env.getProperty("com.nowoncloud.fizzbuzz.twillio.menuResponseUrl"));
+	    gather.setAction(env.getProperty("com.nowoncloud.fizzbuzz.twillio.getfizzbuzz"));
 	    gather.append(say);
 	    gather.setFinishOnKey("#");
 	    Say sayNoInputReceived = new Say(env.getProperty("com.nowoncloud.fizzbuzz.twillio.noInput"));
