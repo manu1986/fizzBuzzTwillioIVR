@@ -16,8 +16,9 @@ hs_err_pid*
 
 # Eclipse Project
 .project
-
+.classpath
 # Gradle Stuff
 .gradle
 .settings
+/build
 /bin
