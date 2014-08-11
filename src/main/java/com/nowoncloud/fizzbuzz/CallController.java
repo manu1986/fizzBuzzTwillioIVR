@@ -41,18 +41,16 @@ public class CallController {
 	}
 	
 	@RequestMapping(value = "/call", method = RequestMethod.GET)
-	public String getCallDetails(Model model) {
-		model.addAttribute("call", new FizzBuzzCall());
+	public String getCall(@ModelAttribute("call") FizzBuzzCall call) {
 		return "index";
 	}
 	
 	@RequestMapping(value = "/call", method = RequestMethod.POST)
-	public String scheduleCall(@Valid @ModelAttribute("call") FizzBuzzCall call, BindingResult bindingResult, Model model) throws TwilioRestException {
+	public String submitCall(@Valid @ModelAttribute("call") FizzBuzzCall call, BindingResult bindingResult) throws TwilioRestException {
 		logger.info("Got request to schedule call " + call.toString());
 		if (bindingResult.hasErrors()) {
             return "index";
         }
-		model.addAttribute("call", call);
 		callService.scheduleCall(call);
         return "callSuccess";
 	}
