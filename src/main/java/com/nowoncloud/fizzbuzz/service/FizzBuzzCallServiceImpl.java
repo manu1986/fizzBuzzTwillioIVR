@@ -60,15 +60,14 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	}
 	
 	@Override
-	public void scheduleCall(FizzBuzzCall fizzBuzzCall) {
+	public void scheduleCall(FizzBuzzCall fizzBuzzCall) throws TwilioRestException {
     	if(fizzBuzzCall.getCallDelay() == 0) {
     		try {
 				makeCall(fizzBuzzCall);
 			} catch (TwilioRestException e) {
 				// TODO have better defined error codes here..
-				// set error in session id
-				fizzBuzzCall.setSessionId("-1");
 				logger.error(e);
+				throw e;
 			}
 		    fizzBuzzCall.setCallAt((System.currentTimeMillis() / 1000L));
 	    } else {
