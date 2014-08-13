@@ -11,10 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.nowoncloud.fizzbuzz.model.FizzBuzzCall;
 import com.nowoncloud.fizzbuzz.service.CallService;
@@ -112,6 +114,23 @@ public class CallController {
 				    .respondWithFizzBuzzSequence(
 				        request.getParameter("Digits"), seq, 
 				        request.getParameter("CallSid")));
+	}
+	
+	
+	
+	/**
+	 * This method is used to redirect users to an error page whenever TwilioRestException happens
+	 *
+	 * @author            Manu Mehrotra
+	 */
+	@ExceptionHandler(TwilioRestException.class) 
+	public ModelAndView handleTwilioRestException(HttpServletRequest req, Exception exception) {
+		logger.error("Request: " + req.getRequestURL() + " raised " + exception);
+		ModelAndView mav = new ModelAndView();
+	    mav.addObject("exception", exception);
+	    mav.addObject("url", req.getRequestURL());
+	    mav.setViewName("twilioRestException");
+	    return mav;
 	}
 	
 }
