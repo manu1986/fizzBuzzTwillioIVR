@@ -7,7 +7,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.nowoncloud.fizzbuzz.domain.FizzBuzzCall;
 
@@ -22,14 +21,12 @@ public class FizzBuzzCallDaoImpl implements CallDao {
 	}
 
 	@Override
-	@Transactional
 	public void createCall(FizzBuzzCall call) {
 		getCurrentSession().save(call);	
 	}
 
 	//TODO change fizzBuzzStartingPoint to fizzBuzzEndingPoint
 	@Override
-	@Transactional
 	public void updateCall(int fizzBuzzStartingPoint, String callSid) {
 		Query query = getCurrentSession().createQuery("from FizzBuzzCall where sessionId = :sid");
 		query.setParameter("sid", callSid);

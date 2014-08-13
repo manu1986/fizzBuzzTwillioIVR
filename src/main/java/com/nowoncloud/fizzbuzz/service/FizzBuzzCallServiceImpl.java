@@ -60,6 +60,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	}
 	
 	@Override
+	@Transactional
 	public void scheduleCall(FizzBuzzCall fizzBuzzCall) throws TwilioRestException {
     	if(fizzBuzzCall.getCallDelay() == 0) {
     		try {
@@ -119,6 +120,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 
 
 	@Override
+	@Transactional
 	public String respondWithFizzBuzzSequence(String fizzBuzzEndPoint, String fizzBuzzSeq, String callSid) throws TwiMLException {
 		Say say;
 		logger.info("Request for fizzbuzz sequence - starting point - " + fizzBuzzEndPoint + "call session id" + callSid);
