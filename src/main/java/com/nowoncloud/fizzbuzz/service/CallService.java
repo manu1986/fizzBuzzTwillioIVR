@@ -8,6 +8,8 @@ public interface CallService  {
 
 	public void scheduleCall(FizzBuzzCall call) throws TwilioRestException;
 
+	void scheduleCall();
+
 	String respondWithGameMenu() throws TwiMLException;
 
 	String respondWithFizzBuzzSequence(String fizzBuzzEndPoint, String fizzBuzzStartingPoint, String callSid) throws TwiMLException;
