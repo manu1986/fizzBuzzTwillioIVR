@@ -14,6 +14,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowoncloud.fizzbuzz.domain.FizzBuzzCall;
@@ -60,7 +61,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	}
 	
 	@Override
-	@Transactional
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=false)
 	public void scheduleCall(FizzBuzzCall fizzBuzzCall) throws TwilioRestException {
     	if(fizzBuzzCall.getCallDelay() == 0) {
     		try {
@@ -120,7 +121,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 
 
 	@Override
-	@Transactional
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=false)
 	public String respondWithFizzBuzzSequence(String fizzBuzzEndPoint, String fizzBuzzSeq, String callSid) throws TwiMLException {
 		Say say;
 		logger.info("Request for fizzbuzz sequence - starting point - " + fizzBuzzEndPoint + "call session id" + callSid);
