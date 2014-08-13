@@ -2,8 +2,8 @@ package com.nowoncloud.fizzbuzz.scheduler.worker;
 
 import java.util.List;
 
-import com.nowoncloud.fizzbuzz.model.FizzBuzzCall;
+import com.nowoncloud.fizzbuzz.domain.FizzBuzzCallEntity;
 
 public interface Worker {
-	 public void work(List<FizzBuzzCall> calls);
+	 public void work(List<FizzBuzzCallEntity> calls);
 }

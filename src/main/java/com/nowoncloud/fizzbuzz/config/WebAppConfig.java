@@ -11,6 +11,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -22,6 +23,7 @@ import com.twilio.sdk.TwilioRestClient;
 import com.twilio.sdk.verbs.TwiMLResponse;
 
 @Configuration
+@EnableTransactionManagement
 @ComponentScan(basePackages="com.nowoncloud.fizzbuzz")
 @EnableWebMvc
 @EnableScheduling
