@@ -30,7 +30,6 @@ import com.twilio.sdk.verbs.TwiMLException;
 import com.twilio.sdk.verbs.TwiMLResponse;
 
 @Service
-@Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
 @PropertySource("classpath:application.properties")
 public class FizzBuzzCallServiceImpl implements CallService {
 	private static final Logger logger = Logger.getLogger(FizzBuzzCallServiceImpl.class);
@@ -88,6 +87,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	private Worker callWorker;
 	
 	@Scheduled(fixedDelay=5000)
+	@Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
 	public void scheduleCall() {  
 		// get all calls whose delay has expired
 		List<FizzBuzzCall> delayExpiredCalls = callDao.getCallsWithExpiredDelays();
