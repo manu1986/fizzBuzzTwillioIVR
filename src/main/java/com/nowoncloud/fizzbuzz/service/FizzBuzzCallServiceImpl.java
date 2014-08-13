@@ -16,7 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.nowoncloud.fizzbuzz.domain.FizzBuzzCallEntity;
+import com.nowoncloud.fizzbuzz.domain.FizzBuzzCall;
 import com.nowoncloud.fizzbuzz.repository.CallDao;
 import com.nowoncloud.fizzbuzz.scheduler.worker.Worker;
 import com.twilio.sdk.TwilioRestClient;
@@ -47,7 +47,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	CallDao callDao;
 	
 	@Override
-	public void makeCall(FizzBuzzCallEntity fizzBuzzCall) throws TwilioRestException {
+	public void makeCall(FizzBuzzCall fizzBuzzCall) throws TwilioRestException {
 		List<NameValuePair> params = new ArrayList<NameValuePair>();  
 		params.add(new BasicNameValuePair("To", fizzBuzzCall.getToNumber()));
 		params.add(new BasicNameValuePair("From", env.getProperty("com.nowoncloud.fizzbuzz.twillio.fromNumber")));
@@ -60,7 +60,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	}
 	
 	@Override
-	public void scheduleCall(FizzBuzzCallEntity fizzBuzzCall) throws TwilioRestException {
+	public void scheduleCall(FizzBuzzCall fizzBuzzCall) throws TwilioRestException {
     	if(fizzBuzzCall.getCallDelay() == 0) {
     		try {
 				makeCall(fizzBuzzCall);
@@ -88,7 +88,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	@Scheduled(fixedDelay=5000)
 	public void scheduleCall() {  
 		// get all calls whose delay has expired
-		List<FizzBuzzCallEntity> delayExpiredCalls = callDao.getCallsWithExpiredDelays();
+		List<FizzBuzzCall> delayExpiredCalls = callDao.getCallsWithExpiredDelays();
 		if(delayExpiredCalls != null && delayExpiredCalls.size() > 0) {
             callWorker.work(delayExpiredCalls);
 		}

@@ -6,7 +6,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.nowoncloud.fizzbuzz.domain.FizzBuzzCallEntity;
+import com.nowoncloud.fizzbuzz.domain.FizzBuzzCall;
 import com.nowoncloud.fizzbuzz.service.CallService;
 import com.twilio.sdk.TwilioRestException;
 
@@ -18,9 +18,9 @@ public class FizzBuzzCallWorkerImpl implements Worker {
 	CallService callService;
 	
 	@Override
-	public void work(List<FizzBuzzCallEntity> calls)  {
+	public void work(List<FizzBuzzCall> calls)  {
 		
-        for (FizzBuzzCallEntity call : calls) {
+        for (FizzBuzzCall call : calls) {
 			try {
 				callService.makeCall(call);
 			} catch (TwilioRestException e) {

@@ -18,7 +18,7 @@ import com.nowoncloud.fizzbuzz.validator.PhoneNumber;
 
 @Entity
 @Table(name = "fizzbuzz_call")
-public class FizzBuzzCallEntity implements Serializable {
+public class FizzBuzzCall implements Serializable {
 	
 	private static final long serialVersionUID = -3492210817289678799L;
 

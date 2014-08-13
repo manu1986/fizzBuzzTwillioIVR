@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.nowoncloud.fizzbuzz.domain.FizzBuzzCallEntity;
+import com.nowoncloud.fizzbuzz.domain.FizzBuzzCall;
 import com.nowoncloud.fizzbuzz.service.CallService;
 import com.nowoncloud.fizzbuzz.service.FizzBuzzGameService;
 import com.twilio.sdk.TwilioRestException;
@@ -46,7 +46,7 @@ public class CallController {
 	 */
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String index(Model model) {
-		model.addAttribute("call", new FizzBuzzCallEntity());
+		model.addAttribute("call", new FizzBuzzCall());
 		return "index";
 	}
 	
@@ -59,7 +59,7 @@ public class CallController {
 	 * @author            Manu Mehrotra
 	 */
 	@RequestMapping(value = "/call", method = RequestMethod.GET)
-	public String getCall(@ModelAttribute("call") FizzBuzzCallEntity call) {
+	public String getCall(@ModelAttribute("call") FizzBuzzCall call) {
 		return "index";
 	}
 	
@@ -73,7 +73,7 @@ public class CallController {
 	 * @author            Manu Mehrotra
 	 */
 	@RequestMapping(value = "/call", method = RequestMethod.POST)
-	public String submitCall(@Valid @ModelAttribute("call") FizzBuzzCallEntity call, BindingResult bindingResult) throws TwilioRestException {
+	public String submitCall(@Valid @ModelAttribute("call") FizzBuzzCall call, BindingResult bindingResult) throws TwilioRestException {
 		logger.info("Got request to schedule call " + call.toString());
 		if (bindingResult.hasErrors()) {
             return "index";
