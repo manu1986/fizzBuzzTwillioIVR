@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.nowoncloud.fizzbuzz.domain.FizzBuzzCall;
 
 @Repository
-@Transactional
 public class FizzBuzzCallDaoImpl implements CallDao {
 
 	@Autowired
@@ -23,13 +22,14 @@ public class FizzBuzzCallDaoImpl implements CallDao {
 	}
 
 	@Override
+	@Transactional
 	public void createCall(FizzBuzzCall call) {
-		getCurrentSession().save(call);
-		
+		getCurrentSession().save(call);	
 	}
 
 	//TODO change fizzBuzzStartingPoint to fizzBuzzEndingPoint
 	@Override
+	@Transactional
 	public void updateCall(int fizzBuzzStartingPoint, String callSid) {
 		Query query = getCurrentSession().createQuery("from FizzBuzzCall where sessionId = :sid");
 		query.setParameter("sid", callSid);
