@@ -31,7 +31,7 @@ public class FizzBuzzCallDaoImpl implements CallDao {
 	//TODO change fizzBuzzStartingPoint to fizzBuzzEndingPoint
 	@Override
 	public void updateCall(int fizzBuzzStartingPoint, String callSid) {
-		Query query = getCurrentSession().createQuery("from FizzBuzzCall where sessionId = :sid");
+		Query query = getCurrentSession().createQuery("from FizzBuzzCallEntity where sessionId = :sid");
 		query.setParameter("sid", callSid);
 		FizzBuzzCallEntity call = (FizzBuzzCallEntity) query.uniqueResult();
 		call.setSessionId(callSid);
@@ -42,7 +42,7 @@ public class FizzBuzzCallDaoImpl implements CallDao {
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<FizzBuzzCallEntity> getCallsWithExpiredDelays() {
-		return getCurrentSession().createQuery("from FizzBuzzCall where callAt < :currentTime AND sessionId = :sessionId")
+		return getCurrentSession().createQuery("from FizzBuzzCallEntity where callAt < :currentTime AND sessionId = :sessionId")
 				.setParameter("currentTime", (System.currentTimeMillis()/1000L)).setParameter("sessionId", "NA").list();
 	}
 	
