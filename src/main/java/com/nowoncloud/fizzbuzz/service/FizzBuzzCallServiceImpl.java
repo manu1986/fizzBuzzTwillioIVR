@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.PropertySource;
@@ -31,6 +32,8 @@ import com.twilio.sdk.verbs.TwiMLResponse;
 @Transactional
 @PropertySource("classpath:application.properties")
 public class FizzBuzzCallServiceImpl implements CallService {
+	private static final Logger logger = Logger.getLogger(FizzBuzzCallServiceImpl.class);
+	
 	private static final int FIZZBUZZ_INPUT_INIT = -1;
 	private static final int FIZZBUZZ_INPUT_ERROR = 0;
 	
@@ -56,7 +59,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 			twillioCall = callFactory.create(params);
 			fizzBuzzCall.setSessionId(twillioCall.getSid());
 		} catch (TwilioRestException e) {
-			System.out.println(e.getErrorMessage());
+			logger.error(e);
 		}  
 	}
 	
@@ -71,7 +74,6 @@ public class FizzBuzzCallServiceImpl implements CallService {
 			BigInteger delayToAdd = BigInteger.valueOf(fizzBuzzCall.getCallDelay() * 60);
 			BigInteger unixEpochWithCallDelay = currentTime.add(delayToAdd);
 			fizzBuzzCall.setCallAt(unixEpochWithCallDelay.longValue());
-			System.out.println("unix epoch = " + (System.currentTimeMillis() / 1000L) + " delay = " + fizzBuzzCall.getCallDelay() + "call scheduled for " + unixEpochWithCallDelay.longValue());
 	    }
     	fizzBuzzCall.setFizzBuzzStartPoint(FIZZBUZZ_INPUT_INIT);
 		callDao.createCall(fizzBuzzCall);
@@ -86,10 +88,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 		System.out.println("in do schedule");
 		// get all calls whose delay has expired
 		List<FizzBuzzCall> delayExpiredCalls = callDao.getCallsWithExpiredDelays();
-		if (delayExpiredCalls!=null) {
-			System.out.println(delayExpiredCalls.size());
-		}
-		if(delayExpiredCalls!=null && delayExpiredCalls.size() > 0) {
+		if(delayExpiredCalls != null && delayExpiredCalls.size() > 0) {
             callWorker.work(delayExpiredCalls);
 		}
 	 }
@@ -113,7 +112,6 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	        twiml.append(gather);
 	        twiml.append(sayNoInputReceived);
 	        retVal = twiml.toXML();
-	        System.out.println(retVal);
 	    }
 	    return retVal;
 	}
@@ -121,8 +119,8 @@ public class FizzBuzzCallServiceImpl implements CallService {
 
 	@Override
 	public String respondWithFizzBuzzSequence(String fizzBuzzEndPoint, String fizzBuzzSeq, String callSid) throws TwiMLException {
-		Say say = new Say("com.nowoncloud.fizzbuzz.twillio.callErrorMessage");
-		System.out.println("starting point - fizzBuzzStartingPoint - " + fizzBuzzSeq);
+		Say say;
+		logger.info("Request for fizzbuzz sequence - starting point - " + fizzBuzzEndPoint + "call session id" + callSid);
 	    if (fizzBuzzSeq != null && fizzBuzzSeq.length() > 0) {
 	    	// svae endpoint of fizzbuzz in database
 	    	callDao.updateCall(NumberUtils.toInt(fizzBuzzEndPoint), callSid);
@@ -138,6 +136,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	    } else {
 	    	// save -1 instead of fizzbuzz end point as an error has occured
 	    	callDao.updateCall(FIZZBUZZ_INPUT_ERROR, callSid);
+	    	say = new Say("com.nowoncloud.fizzbuzz.twillio.callErrorMessage");
 	    	say.setVoice(env.getProperty("com.nowoncloud.fizzbuzz.twillio.callVoice"));
 	    	synchronized(twiml) {
     	    	twiml.append(say);

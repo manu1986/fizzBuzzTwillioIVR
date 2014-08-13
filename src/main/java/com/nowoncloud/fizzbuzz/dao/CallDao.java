@@ -8,7 +8,7 @@ public interface CallDao {
 
 	public void createCall(FizzBuzzCall call);
 	
-	public void updateCall(int fizzBuzzStartingPoint, String callSid);
+	public void updateCall(int fizzBuzzEndPoint, String callSid);
 
 	public List<FizzBuzzCall> getCallsWithExpiredDelays();
 	

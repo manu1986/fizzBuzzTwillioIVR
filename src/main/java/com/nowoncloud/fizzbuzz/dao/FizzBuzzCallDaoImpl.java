@@ -26,6 +26,7 @@ public class FizzBuzzCallDaoImpl implements CallDao {
 		
 	}
 
+	//TODO change fizzBuzzStartingPoint to fizzBuzzEndingPoint
 	@Override
 	public void updateCall(int fizzBuzzStartingPoint, String callSid) {
 		Query query = getCurrentSession().createQuery("from FizzBuzzCall where sessionId = :sid");

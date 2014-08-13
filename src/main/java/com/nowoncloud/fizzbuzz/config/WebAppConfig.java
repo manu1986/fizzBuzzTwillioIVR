@@ -26,6 +26,7 @@ import com.twilio.sdk.verbs.TwiMLResponse;
 @EnableWebMvc
 @EnableScheduling
 @PropertySource("classpath:application.properties")
+// TODO - Remove hard codings into separate static final String's
 public class WebAppConfig extends WebMvcConfigurerAdapter {
 	@Autowired
     Environment env;

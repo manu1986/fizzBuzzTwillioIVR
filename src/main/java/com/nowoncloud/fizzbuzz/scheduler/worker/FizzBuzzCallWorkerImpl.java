@@ -2,6 +2,7 @@ package com.nowoncloud.fizzbuzz.scheduler.worker;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +13,7 @@ import com.twilio.sdk.TwilioRestException;
 
 @Component("callWorker")
 public class FizzBuzzCallWorkerImpl implements Worker {
+	private static final Logger logger = Logger.getLogger(FizzBuzzCallWorkerImpl.class);
 	@Autowired
 	CallService callService;
 	
@@ -21,9 +23,8 @@ public class FizzBuzzCallWorkerImpl implements Worker {
         for (FizzBuzzCall call : calls) {
 			try {
 				callService.makeCall(call);
-				// update sid in db 
 			} catch (TwilioRestException e) {
-				System.out.println(e.getErrorMessage());
+				logger.error(e);
 			}
 		}
 	}

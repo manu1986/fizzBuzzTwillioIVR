@@ -1,4 +1,4 @@
-package com.nowoncloud.fizzbuzz;
+package com.nowoncloud.fizzbuzz.controller;
 
 import java.io.IOException;
 
@@ -34,17 +34,42 @@ public class CallController {
 	@Autowired
 	FizzBuzzGameService fizzBuzzGameService;
 	
+	/**
+	 * This method is called when the index page is requested
+	 *
+	 * @param   Model object
+	 * @return  name of the jsp file to be returned
+	 *
+	 * @author            Manu Mehrotra
+	 */
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String index(Model model) {
 		model.addAttribute("call", new FizzBuzzCall());
 		return "index";
 	}
 	
+	/**
+	 * This method is called when the /call page is requested
+	 *
+	 * @param   Model object
+	 * @return  name of the jsp file to be returned
+	 *
+	 * @author            Manu Mehrotra
+	 */
 	@RequestMapping(value = "/call", method = RequestMethod.GET)
 	public String getCall(@ModelAttribute("call") FizzBuzzCall call) {
 		return "index";
 	}
 	
+	
+	/**
+	 * This method is called when new call details are submitted
+	 *
+	 * @param   FizzBuzzCall, BindingResult
+	 * @return  name of the jsp file to be returned
+	 *
+	 * @author            Manu Mehrotra
+	 */
 	@RequestMapping(value = "/call", method = RequestMethod.POST)
 	public String submitCall(@Valid @ModelAttribute("call") FizzBuzzCall call, BindingResult bindingResult) throws TwilioRestException {
 		logger.info("Got request to schedule call " + call.toString());
@@ -55,6 +80,14 @@ public class CallController {
         return "callSuccess";
 	}
 
+	/**
+	 * This method is called by twilio to request the initial menu which is to be read out to the user
+	 *
+	 * @param   HttpServletRequest, HttpServletResponse
+	 * @return  TwiML for the menu is written to the response stream
+	 *
+	 * @author            Manu Mehrotra
+	 */
 	@RequestMapping(value = "/fizzbuzz", method = RequestMethod.GET)
 	public void readGameMenu(HttpServletRequest request, HttpServletResponse response) throws TwiMLException, IOException {
 		logger.info("Got request for game menu " + request.toString());
@@ -62,6 +95,14 @@ public class CallController {
 		response.getWriter().print(callService.respondWithGameMenu());
 	}
 	
+	/**
+	 * This method is called by twilio to provide the number inputted by the user and get the fizzbuzz sequence in response
+	 *
+	 * @param   HttpServletRequest, HttpServletResponse
+	 * @return  TwiML for the fizzbuzz sequence is written to the response stream
+	 *
+	 * @author            Manu Mehrotra
+	 */
 	@RequestMapping(value = "/fizzbuzz", method = RequestMethod.POST)
 	public void getGameMenuResponse(HttpServletRequest request, HttpServletResponse response) throws IOException, TwiMLException {
 		logger.info("Got request for fizzbuzz sequence " + request.toString());

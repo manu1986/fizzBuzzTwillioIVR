@@ -39,6 +39,7 @@ public class FizzBuzzCall implements Serializable {
 	@Range(min = 0, max = 60)
 	private int callDelay;
 	
+	//TODO change fizzbuzz_start_point to fizzbuzz_end_point
 	@Column(name="fizzbuzz_start_point", nullable = false)
 	private int fizzBuzzStartPoint;
 	

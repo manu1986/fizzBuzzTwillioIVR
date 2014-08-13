@@ -4,13 +4,14 @@
 <%@ page session="false" %>
 <html>
 <head>
-    <title>Call made Successfully</title>
+    <title>Call scheduled Successfully</title>
 </head>
 <body>
 <h3>
-    Call made Successfully.
+    Call scheduled Successfully.
 </h3>
  
-Number called : ${call.toNumber}<br>
+Number to be called : ${call.toNumber} <br/>
+
 </body>
 </html>
