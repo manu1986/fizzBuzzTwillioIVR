@@ -9,17 +9,14 @@ import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.nowoncloud.fizzbuzz.domain.FizzBuzzCall;
 import com.nowoncloud.fizzbuzz.repository.CallDao;
-import com.nowoncloud.fizzbuzz.scheduler.worker.Worker;
 import com.twilio.sdk.TwilioRestClient;
 import com.twilio.sdk.TwilioRestException;
 import com.twilio.sdk.resource.factory.CallFactory;
@@ -82,19 +79,6 @@ public class FizzBuzzCallServiceImpl implements CallService {
 		callDao.createCall(fizzBuzzCall);
 	}
 	
-	@Autowired
-	@Qualifier("callWorker")
-	private Worker callWorker;
-	
-	@Scheduled(fixedDelay=5000)
-	@Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-	public void scheduleCall() {  
-		// get all calls whose delay has expired
-		List<FizzBuzzCall> delayExpiredCalls = callDao.getCallsWithExpiredDelays();
-		if(delayExpiredCalls != null && delayExpiredCalls.size() > 0) {
-            callWorker.work(delayExpiredCalls);
-		}
-	 }
 	
 	@Autowired
 	TwiMLResponse twiml;
