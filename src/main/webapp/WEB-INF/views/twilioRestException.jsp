@@ -7,13 +7,12 @@
 
 <body>
  
-    <h1>Error Page</h1>
-        <p>Application has encountered an error. Please contact support on ...</p>
+    <h1>TwilioRestException Page</h1>
+        <p>Application has encountered an error. Please contact support on support@phonebuzz.com</p>
+        <p>What Happened? - view source to see exception message in comments below...</p>
 
 	    <!--
 	    Failed URL: ${url}
 	    Exception:  ${exception.message}
-	        <c:forEach items="${exception.stackTrace}" var="ste">    ${ste} 
-	    </c:forEach>
 	    -->
 </body>
