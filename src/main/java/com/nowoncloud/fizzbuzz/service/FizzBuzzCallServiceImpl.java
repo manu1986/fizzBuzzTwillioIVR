@@ -29,7 +29,6 @@ import com.twilio.sdk.verbs.TwiMLException;
 import com.twilio.sdk.verbs.TwiMLResponse;
 
 @Service
-@Transactional
 @PropertySource("classpath:application.properties")
 public class FizzBuzzCallServiceImpl implements CallService {
 	private static final Logger logger = Logger.getLogger(FizzBuzzCallServiceImpl.class);

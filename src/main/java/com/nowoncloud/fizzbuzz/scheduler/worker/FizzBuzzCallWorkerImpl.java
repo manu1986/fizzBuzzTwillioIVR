@@ -13,7 +13,6 @@ import com.twilio.sdk.TwilioRestException;
 
 
 @Component("callWorker")
-@Transactional
 public class FizzBuzzCallWorkerImpl implements Worker {
 	private static final Logger logger = Logger.getLogger(FizzBuzzCallWorkerImpl.class);
 	@Autowired
