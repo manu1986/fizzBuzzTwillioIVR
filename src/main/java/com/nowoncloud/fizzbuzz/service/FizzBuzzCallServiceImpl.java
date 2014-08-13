@@ -47,7 +47,7 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	CallDao callDao;
 	
 	@Override
-	public void makeCall(FizzBuzzCall fizzBuzzCall) {
+	public void makeCall(FizzBuzzCall fizzBuzzCall) throws TwilioRestException {
 		List<NameValuePair> params = new ArrayList<NameValuePair>();  
 		params.add(new BasicNameValuePair("To", fizzBuzzCall.getToNumber()));
 		params.add(new BasicNameValuePair("From", env.getProperty("com.nowoncloud.fizzbuzz.twillio.fromNumber")));
@@ -55,18 +55,21 @@ public class FizzBuzzCallServiceImpl implements CallService {
 		params.add(new BasicNameValuePair("Method", "GET"));  
 		CallFactory callFactory = twilioRestClient.getAccount().getCallFactory(); 
 	    Call twillioCall;
-		try {
-			twillioCall = callFactory.create(params);
-			fizzBuzzCall.setSessionId(twillioCall.getSid());
-		} catch (TwilioRestException e) {
-			logger.error(e);
-		}  
+		twillioCall = callFactory.create(params);
+		fizzBuzzCall.setSessionId(twillioCall.getSid());
 	}
 	
 	@Override
 	public void scheduleCall(FizzBuzzCall fizzBuzzCall) {
     	if(fizzBuzzCall.getCallDelay() == 0) {
-    		makeCall(fizzBuzzCall);
+    		try {
+				makeCall(fizzBuzzCall);
+			} catch (TwilioRestException e) {
+				// TODO have better defined error codes here..
+				// set error in session id
+				fizzBuzzCall.setSessionId("-1");
+				logger.error(e);
+			}
 		    fizzBuzzCall.setCallAt((System.currentTimeMillis() / 1000L));
 	    } else {
 	    	fizzBuzzCall.setSessionId("NA");
@@ -85,7 +88,6 @@ public class FizzBuzzCallServiceImpl implements CallService {
 	
 	@Scheduled(fixedDelay=5000)
 	public void scheduleCall() {  
-		System.out.println("in do schedule");
 		// get all calls whose delay has expired
 		List<FizzBuzzCall> delayExpiredCalls = callDao.getCallsWithExpiredDelays();
 		if(delayExpiredCalls != null && delayExpiredCalls.size() > 0) {
