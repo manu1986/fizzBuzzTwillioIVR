@@ -143,3 +143,29 @@ applied to `/v1/items` + `/v1/query` + `/v1/me*`). GDPR/CCPA endpoints
 - **[Med] Erasure doesn't purge orphaned entities or geocode cache**, and there's no audit-log of deletions — add for full compliance.
 - **[Low] No per-route scopes/roles** (all keys equal); add scopes before multi-tenant/community.
 - DB-backed auth paths (valid-key lookup, export/delete) **unverified end-to-end** (no Postgres in sandbox); the 401 path and hook ordering are verified.
+
+---
+
+## Review R7 — Instagram connector (Strategy A, no official API)
+
+**Panel:** Backend, Security, Legal/ToS, Data, SRE.
+
+First real source connector (`sources/instagram.js`). Resolves a reel's content
+straight from the URL — no official API, per the chosen Strategy A. Ladder:
+**`/embed/captioned/` (no-auth caption) → OpenGraph fallback**, browser UA, routed
+through the SSRF-safe fetch. Pure parsers (`parseInstagramUrl`, `extractFromEmbed`,
+`extractFromOg`) factored out and unit-tested. Content fingerprint is now
+**shortcode-aware** (`lib/platforms.js`): `/reel/`, `/p/`, `/tv/` + tracking
+params dedupe to one entry. Registered ahead of the web catch-all.
+
+### Findings → Fixed / verified
+- **[Data] Cross-shape dedup**: reel/p/tv of the same shortcode now share a fingerprint → processed once, fanned out. **Verified** by unit test.
+- **[SRE] Never hard-fails**: both strategies are wrapped; a block/login-wall degrades to OG, then to a minimal record (heuristic extraction downstream) rather than erroring the save. **Verified** (parsers tested on sample HTML incl. JSON-blob fallback).
+- **[Security] Reuses `safeFetchText`** — SSRF guard, timeout, size cap apply to IG fetches too.
+
+### Residual (tracked) — and the honest risk picture
+- **[High — accepted by decision] ToS / brittleness.** This scrapes Instagram (Strategy A): it violates IG's Terms, will break when their HTML/markup changes, and can be rate-limited or login-walled (esp. server IPs / datacenter ranges). Accepted for now per the product decision; the connector is isolated behind the `SourceConnector` interface so it can be swapped without touching the pipeline.
+- **[High] Real-world success rate unknown.** Selectors (`.Caption`, `.Username`) are best-effort and historically volatile; the embed endpoint may not always return the caption. Needs monitoring of the `raw.strategy` field (embed/og/none) success-rate and alerting when it drops — the §6.2 circuit-breaker.
+- **[Med] No video/audio understanding** — caption + thumbnail only (text path). True reel comprehension (ASR/OCR/frames) needs the media path (on-device or a media fetch), deferred.
+- **[Med] Block resilience**: no proxy rotation / backoff-on-block / caching of the fetched HTML yet; add before any volume.
+- **Live IG fetch unverified** (sandbox has no/blocked network to IG; IG blocks datacenter IPs anyway). All pure parsing is unit-verified; the network behavior is the real-world unknown.

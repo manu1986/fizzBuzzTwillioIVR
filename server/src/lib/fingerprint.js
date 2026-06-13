@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { parseInstagramUrl } from './platforms.js';
 
 const TRACKING = /^(utm_|ig_|igsh$|igshid$|fbclid$|gclid$|si$|feature$)/i;
 
@@ -19,6 +20,14 @@ export function normalizeUrl(raw) {
   }
 }
 
+// Platform-aware canonicalization so the same content shared via different URL
+// shapes (e.g. instagram /reel/ vs /p/) collapses to one fingerprint.
+export function canonicalContentUrl(raw) {
+  const ig = parseInstagramUrl(raw);
+  if (ig) return ig.canonical;
+  return normalizeUrl(raw);
+}
+
 export function fingerprint(raw) {
-  return crypto.createHash('sha256').update(normalizeUrl(raw)).digest('hex');
+  return crypto.createHash('sha256').update(canonicalContentUrl(raw)).digest('hex');
 }
