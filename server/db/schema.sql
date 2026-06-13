@@ -3,6 +3,7 @@
 
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- A piece of content, keyed by content fingerprint (the global dedup key).
 CREATE TABLE IF NOT EXISTS source (
@@ -71,3 +72,9 @@ ALTER TABLE claim ADD COLUMN IF NOT EXISTS event_start timestamptz;
 ALTER TABLE claim ADD COLUMN IF NOT EXISTS event_end   timestamptz;
 CREATE INDEX IF NOT EXISTS claim_event_start_idx ON claim (event_start);
 CREATE INDEX IF NOT EXISTS entity_geo_idx ON entity (lat, lng);
+
+-- Real entity resolution: geocoded place_id merge key + aliases + fuzzy index.
+ALTER TABLE entity ADD COLUMN IF NOT EXISTS place_id text;
+ALTER TABLE entity ADD COLUMN IF NOT EXISTS aliases  text[];
+CREATE UNIQUE INDEX IF NOT EXISTS entity_place_id_uidx ON entity (place_id) WHERE place_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS entity_norm_trgm_idx ON entity USING gin (norm_name gin_trgm_ops);

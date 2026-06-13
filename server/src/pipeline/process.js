@@ -3,6 +3,7 @@ import { resolveConnector } from '../sources/index.js';
 import { extractClaims } from '../llm/anthropic.js';
 import { embed } from '../llm/embeddings.js';
 import { geocode } from '../llm/geocode.js';
+import { resolveEntity } from '../entities/resolve.js';
 import { normName, toVectorLiteral } from '../lib/text.js';
 import { logger } from '../lib/logger.js';
 
@@ -123,18 +124,12 @@ async function persist({ src, resolution, extraction, costUsd, tier }) {
     await client.query('delete from claim where source_id=$1', [src.id]);
 
     for (const { c, vec, geo, eventStart, eventEnd } of prepared) {
-      const ent = await client.query(
-        `insert into entity(type, canonical_name, norm_name, location_hint, lat, lng)
-         values($1,$2,$3,$4,$5,$6)
-         on conflict (norm_name, type) do update set
-           canonical_name = excluded.canonical_name,
-           location_hint  = coalesce(entity.location_hint, excluded.location_hint),
-           lat            = coalesce(entity.lat, excluded.lat),
-           lng            = coalesce(entity.lng, excluded.lng)
-         returning id`,
-        [c.entity_type, c.entity_name, normName(c.entity_name), c.location_hint, geo?.lat ?? null, geo?.lng ?? null],
-      );
-      const entityId = ent.rows[0].id;
+      const entityId = await resolveEntity(client, {
+        name: c.entity_name,
+        type: c.entity_type,
+        location_hint: c.location_hint,
+        geo,
+      });
       await client.query(
         `insert into claim(source_id, entity_id, attribute, value, sentiment, recommendation_strength,
                            category, time_hint, event_start, event_end, embedding)

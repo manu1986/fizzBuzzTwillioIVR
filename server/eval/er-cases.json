@@ -4,11 +4,13 @@
     [{ "name": "Red Rocks Amphitheatre", "type": "place" }, { "name": "red rocks amphitheatre", "type": "place" }],
     [{ "name": "Joe's Pizza", "type": "place" }, { "name": "Joes Pizza", "type": "place" }],
     [{ "name": "Denver Art Museum", "type": "place" }, { "name": "The Denver Art Museum", "type": "place" }],
-    [{ "name": "Tavernetta", "type": "place" }, { "name": "Tavernetta Restaurant", "type": "place" }]
+    [{ "name": "Tavernetta", "type": "place" }, { "name": "Tavernetta Restaurant", "type": "place" }],
+    [{ "name": "Tavernetta", "type": "place", "place_id": "g:XYZ" }, { "name": "Tavernetta near Union Station", "type": "place", "place_id": "g:XYZ" }]
   ],
   "different": [
     [{ "name": "Joe's Pizza", "type": "place" }, { "name": "Joe's Diner", "type": "place" }],
     [{ "name": "Red Rocks Amphitheatre", "type": "place" }, { "name": "Denver Art Museum", "type": "place" }],
-    [{ "name": "Mount Falcon Park", "type": "place" }, { "name": "Great Divide Brewing", "type": "place" }]
+    [{ "name": "Mount Falcon Park", "type": "place" }, { "name": "Great Divide Brewing", "type": "place" }],
+    [{ "name": "Joe's Pizza", "type": "place", "place_id": "g:AAA" }, { "name": "Joe's Pizza", "type": "place", "place_id": "g:BBB" }]
   ]
 }

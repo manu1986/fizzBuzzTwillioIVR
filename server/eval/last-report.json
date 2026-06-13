@@ -1,5 +1,5 @@
 {
-  "at": "2026-06-13T13:09:53.186Z",
+  "at": "2026-06-13T13:16:15.171Z",
   "config": {
     "llm": false,
     "embeddings": "hash-fallback"
@@ -9,16 +9,10 @@
     "f1": 0.6
   },
   "entity_resolution": {
-    "accuracy": 0.8571428571428571,
-    "correct": 6,
-    "total": 7,
-    "errors": [
-      {
-        "kind": "should-merge-but-split",
-        "a": "Tavernetta",
-        "b": "Tavernetta Restaurant"
-      }
-    ]
+    "accuracy": 1,
+    "correct": 9,
+    "total": 9,
+    "errors": []
   },
   "extraction": {
     "ran": false,

@@ -4,6 +4,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import itemsRoutes from './routes/items.js';
 import queryRoutes from './routes/query.js';
 import healthRoutes from './routes/health.js';
+import metricsRoutes from './routes/metrics.js';
 
 export async function buildApp() {
   const app = Fastify({ logger: false });
@@ -18,6 +19,7 @@ export async function buildApp() {
   await app.register(healthRoutes);
   await app.register(itemsRoutes);
   await app.register(queryRoutes);
+  await app.register(metricsRoutes);
 
   return app;
 }

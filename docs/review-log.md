@@ -69,3 +69,27 @@ when `ANTHROPIC_API_KEY` is set; query eval with `--full` and a reachable DB.
 - **Golden set is small (3 synthetic fixtures)** — grow per query category, and add fixtures sourced from real (anonymized) shares once a connector path exists.
 - **Extraction + query eval can't run in this sandbox** (no LLM key / no DB). The offline ER number is real; the rest needs a keyed + DB environment.
 - **Eval `erKey` mirrors the pipeline's `(norm_name, type)` keying by hand** — both derive from the shared `normName`, so they move together, but a future ER change must update both.
+
+---
+
+## Review R4 — Real entity resolution
+
+**Panel:** Data/Knowledge-graph, ML/Applied-AI, SRE.
+
+Replaced v0 name-keying with a resolution ladder (`entities/resolve.js`,
+plan §6.5): **geocoded `place_id` (authoritative) → exact norm/alias → trigram
+fuzzy (Dice ≥ 0.55, tuned on the labeled set) → create**, with `aliases` capture.
+Added `pg_trgm` + a unique `place_id` index, and an ER-health endpoint
+`GET /v1/metrics/er` (entity count, `with_place_id_%`, merge_rate, orphan_rate,
+avg claims/entity).
+
+### Findings → Fixed / verified
+- **Residual from R3 closed:** `"Tavernetta"`/`"Tavernetta Restaurant"` now merges (trigram 0.645 ≥ 0.55). ER-keying eval **100% (9/9)**, now including a `place_id` merge case and a same-name/different-`place_id` **homonym split** case. Threshold chosen empirically (SAME ≥ 0.645, DIFFERENT ≤ 0.400 — clean margin). **Verified** by running the harness.
+- The eval scorer now exercises the **real** `entitiesMatch` predicate (not a stand-in), so the harness tracks the shipped logic.
+
+### Residual (tracked)
+- **[Med] No-geo homonyms.** Same name, different city, *without* a `place_id` still merges via exact-norm. `place_id` disambiguates when geocoding is on (prod); without it, fold `location_hint` into the key for places lacking `place_id`.
+- **[Med] Fuzzy query is a seq scan** — `similarity() >= t` doesn't use the GIN index; switch to the `%` operator + `set_limit()` (or a per-session GUC) to use `entity_norm_trgm_idx` at scale.
+- **[Med] Threshold tuned on a tiny set** — grow the labeled ER set and add a **human-in-the-loop review queue** for borderline merges (plan §6.5 calls for HITL on high-value entities).
+- **[Low] Metrics are exposed but not alerted** — wire thresholds (e.g., orphan_rate spike, merge_rate collapse) into monitoring.
+- **DB resolver unverified end-to-end** (no Postgres in sandbox); the pure `entitiesMatch` predicate is verified, and the SQL mirrors it.

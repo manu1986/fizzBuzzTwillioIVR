@@ -1,4 +1,5 @@
 import { normName } from '../lib/text.js';
+import { entitiesMatch } from '../entities/resolve.js';
 
 export function jaccard(a, b) {
   const A = new Set(normName(a).split(' ').filter(Boolean));
@@ -40,19 +41,19 @@ export function erKey(name, type) {
   return `${type}|${normName(name)}`;
 }
 
-// Measure the current ER keying against labeled merge/split cases.
+// Measure the real ER match predicate against labeled merge/split cases.
 export function scoreEr({ same = [], different = [] }) {
   let correct = 0;
   let total = 0;
   const errors = [];
   for (const [a, b] of same) {
     total += 1;
-    if (erKey(a.name, a.type) === erKey(b.name, b.type)) correct += 1;
+    if (entitiesMatch(a, b)) correct += 1;
     else errors.push({ kind: 'should-merge-but-split', a: a.name, b: b.name });
   }
   for (const [a, b] of different) {
     total += 1;
-    if (erKey(a.name, a.type) !== erKey(b.name, b.type)) correct += 1;
+    if (!entitiesMatch(a, b)) correct += 1;
     else errors.push({ kind: 'should-split-but-merged', a: a.name, b: b.name });
   }
   return { accuracy: total ? correct / total : 0, correct, total, errors };
