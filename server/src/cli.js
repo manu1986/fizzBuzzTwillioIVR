@@ -30,8 +30,16 @@ async function main() {
   } else if (cmd === 'item') {
     const res = await fetch(`${base}/v1/items/${rest[0]}`);
     console.log(JSON.stringify(await res.json(), null, 2));
+  } else if (cmd === 'mintkey') {
+    // Direct DB access (not via HTTP) to issue an API key.
+    const { createApiKey } = await import('./auth/keys.js');
+    const { pool } = await import('./db.js');
+    const userId = rest.find((a) => !a.startsWith('--')) || config.defaultUserId;
+    const key = await createApiKey(userId, 'cli');
+    console.log(JSON.stringify({ user_id: userId, api_key: key }, null, 2));
+    await pool.end();
   } else {
-    console.log('usage: submit <url> [--sync] | query "..." [--scope all] | item <id>');
+    console.log('usage: submit <url> [--sync] | query "..." [--scope all] | item <id> | mintkey <userId>');
     process.exit(1);
   }
 }

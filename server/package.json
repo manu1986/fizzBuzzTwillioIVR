@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Share-to-knowledge-graph headless backend",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "api": "node src/server.js",
     "worker": "node src/worker.js",
@@ -13,6 +15,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
+    "@fastify/rate-limit": "^9.1.0",
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
     "cheerio": "^1.0.0",

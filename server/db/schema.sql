@@ -36,6 +36,17 @@ CREATE TABLE IF NOT EXISTS user_save (
   UNIQUE (user_id, source_id)
 );
 
+-- API keys (hashed). Auth maps a key -> user_id; secrets are never stored raw.
+CREATE TABLE IF NOT EXISTS api_key (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       text NOT NULL,
+  key_hash      text UNIQUE NOT NULL,
+  name          text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  last_used_at  timestamptz,
+  revoked_at    timestamptz
+);
+
 -- Canonical (deduped) entity catalog.
 CREATE TABLE IF NOT EXISTS entity (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),

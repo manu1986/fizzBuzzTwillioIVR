@@ -10,18 +10,18 @@ export default async function queryRoutes(fastify) {
         required: ['text'],
         properties: {
           text: { type: 'string' },
-          user_id: { type: 'string' },
           scope: { type: 'string', enum: ['mine', 'all'], default: 'mine' },
           tz: { type: 'string', description: 'IANA timezone for resolving relative dates' },
         },
       },
     },
+    config: { rateLimit: { max: config.rateLimit.max, timeWindow: config.rateLimit.windowMs } },
   }, async (req, reply) => {
-    const { text, user_id: userId, scope, tz } = req.body || {};
+    const { text, scope, tz } = req.body || {};
     if (!text) return reply.code(400).send({ error: 'text required' });
     return answerQuery({
       question: text,
-      userId: userId || config.defaultUserId,
+      userId: req.userId || config.defaultUserId, // from auth, never trust body
       scope: scope || 'mine',
       tz: tz || config.defaultTimezone,
     });

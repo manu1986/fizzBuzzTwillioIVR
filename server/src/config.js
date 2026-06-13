@@ -8,6 +8,13 @@ export const config = {
   googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY || '', // optional; Nominatim fallback otherwise
   defaultUserId: process.env.DEFAULT_USER_ID || 'dev-user',
   defaultTimezone: process.env.DEFAULT_TIMEZONE || 'UTC',
+  // Auth off by default for local dev (requests run as defaultUserId). Set
+  // AUTH_REQUIRED=true in any shared/prod environment.
+  auth: { required: process.env.AUTH_REQUIRED === 'true' },
+  rateLimit: {
+    max: Number(process.env.RATE_LIMIT_MAX || 120),
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60000),
+  },
   embeddingDim: 1024,
   // Cost-tiered cascade (see plan §6.3). Phase 0 wires T0 + synthesis.
   models: {

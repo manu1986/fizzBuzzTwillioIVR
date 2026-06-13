@@ -117,3 +117,29 @@ runs through the cascade and reports per-fixture tier + cost.
 - **[Low] Escalation re-runs from scratch** (no reuse of the T0 output as a hint) — cost of escalating = sum of tiers. Acceptable; could feed the lower tier's draft to the higher tier.
 - **[Low] Virality is sampled once.** Popularity-based start-tier is computed at first processing; a reel that goes viral later won't re-escalate without a reprocess trigger.
 - Extraction-quality lift **unmeasured in this sandbox** (no LLM key); the gating logic is unit-verified and the harness is ready to measure it with a key.
+
+---
+
+## Review R6 — Prod hardening: auth, rate limiting, privacy
+
+**Panel:** Security, SRE, Privacy/Compliance, Backend.
+
+Added API-key auth (`auth/keys.js`, `plugins/auth.js`): `Authorization: Bearer`
+or `x-api-key` → hashed lookup → `req.userId`. Off by default for local dev
+(runs as `defaultUserId`); `AUTH_REQUIRED=true` enforces a valid key on non-public
+routes. Per-user rate limiting via `@fastify/rate-limit` (keyed on `req.userId`,
+applied to `/v1/items` + `/v1/query` + `/v1/me*`). GDPR/CCPA endpoints
+`GET /v1/me/export` and `DELETE /v1/me`. `mintkey` CLI command. 256 KB body cap.
+
+### Findings → Fixed / verified
+- **[Security] Body `user_id` was trust-on-input** — any caller could act as another user. → routes now derive the user **only** from auth (`req.userId`); `user_id` removed from request bodies.
+- **[Security] Keys hashed at rest** (SHA-256); raw key shown once at mint; revoke supported.
+- **Auth hook ordering** — registered before the rate-limit plugin so `req.userId` is set before rate-limit keys on it; public-path allowlist (`/health`, `/docs`) verified. **Verified** by inject test: no-key → 401, `/health` + `/docs/json` stay open.
+- **[Privacy] Erasure semantics**: `DELETE /v1/me` drops the user's saves then deletes now-orphaned sources (cascading claims); sources still saved by others are retained (shared catalog). Export returns the user's saves + their claims.
+
+### Residual (tracked)
+- **[Med] Rate-limit store is in-process** — per-instance, not shared; use the plugin's Redis store for multi-instance correctness.
+- **[Med] Token hashing is plain SHA-256** (fine for high-entropy random keys); if keys ever become low-entropy, move to a slow KDF. No key rotation/expiry UX yet.
+- **[Med] Erasure doesn't purge orphaned entities or geocode cache**, and there's no audit-log of deletions — add for full compliance.
+- **[Low] No per-route scopes/roles** (all keys equal); add scopes before multi-tenant/community.
+- DB-backed auth paths (valid-key lookup, export/delete) **unverified end-to-end** (no Postgres in sandbox); the 401 path and hook ordering are verified.

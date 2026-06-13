@@ -11,20 +11,18 @@ export default async function itemsRoutes(fastify) {
       body: {
         type: 'object',
         required: ['url'],
-        properties: {
-          url: { type: 'string' },
-          user_id: { type: 'string' },
-        },
+        properties: { url: { type: 'string' } },
       },
       querystring: {
         type: 'object',
         properties: { sync: { type: 'string', description: 'set "true" to process inline (debug)' } },
       },
     },
+    config: { rateLimit: { max: config.rateLimit.max, timeWindow: config.rateLimit.windowMs } },
   }, async (req, reply) => {
-    const { url, user_id: userId } = req.body || {};
+    const { url } = req.body || {};
     if (!url) return reply.code(400).send({ error: 'url required' });
-    const uid = userId || config.defaultUserId;
+    const uid = req.userId || config.defaultUserId; // from auth, never trust body
     const fp = fingerprint(url);
 
     // Re-queue items stuck in 'error' so a transient failure isn't terminal;
