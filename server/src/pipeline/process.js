@@ -15,34 +15,9 @@ export async function processSource(sourceId) {
 
   try {
     await pool.query("update source set status='resolving', updated_at=now() where id=$1", [sourceId]);
-
     const connector = resolveConnector(src.permalink);
     const resolution = await connector.resolve(src.permalink);
-
-    let extraction = null;
-    let costUsd = 0;
-    let tier = 'heuristic';
-    const llm = await extractClaims({
-      text: resolution.text,
-      sourceMeta: {
-        title: resolution.title,
-        author: resolution.author,
-        platform: resolution.platform,
-        permalink: resolution.permalink,
-        description: resolution.description,
-        current_date: new Date().toISOString(),
-      },
-    });
-    if (llm) {
-      extraction = llm.extraction;
-      costUsd = llm.costUsd;
-      tier = `T0:${llm.model}`;
-    } else {
-      extraction = heuristicExtraction(resolution);
-    }
-
-    await persist({ src, resolution, extraction, costUsd, tier });
-    logger.info('processed', { sourceId, claims: extraction.claims.length, tier });
+    await runExtraction({ src, resolution });
   } catch (e) {
     logger.error('process_failed', { sourceId, err: String(e) });
     await pool.query("update source set status='error', error=$2, updated_at=now() where id=$1", [
@@ -50,6 +25,35 @@ export async function processSource(sourceId) {
       String(e).slice(0, 500),
     ]);
   }
+}
+
+// Extract claims from an already-resolved source and persist them. Separated so
+// the eval harness can drive it with fixture content (no live connector).
+export async function runExtraction({ src, resolution }) {
+  let extraction = null;
+  let costUsd = 0;
+  let tier = 'heuristic';
+  const llm = await extractClaims({
+    text: resolution.text,
+    sourceMeta: {
+      title: resolution.title,
+      author: resolution.author,
+      platform: resolution.platform,
+      permalink: resolution.permalink,
+      description: resolution.description,
+      current_date: new Date().toISOString(),
+    },
+  });
+  if (llm) {
+    extraction = llm.extraction;
+    costUsd = llm.costUsd;
+    tier = `T0:${llm.model}`;
+  } else {
+    extraction = heuristicExtraction(resolution);
+  }
+  await persist({ src, resolution, extraction, costUsd, tier });
+  logger.info('processed', { sourceId: src.id, claims: extraction.claims.length, tier });
+  return { extraction, tier, costUsd };
 }
 
 function heuristicExtraction(r) {

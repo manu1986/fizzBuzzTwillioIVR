@@ -1,0 +1,21 @@
+{
+  "id": "denver-things",
+  "source": {
+    "platform": "web",
+    "permalink": "https://example.com/eval/denver-things-to-do",
+    "title": "10 Amazing Things to Do in Denver",
+    "content": "Denver is packed with things to do. Don't miss Red Rocks Amphitheatre, an unreal outdoor concert venue carved into the rocks just outside the city. The Denver Art Museum downtown is a must-visit for its modern collection. Grab a craft beer at Great Divide Brewing. For the outdoors, hike at Mount Falcon Park. Foodies should book a table at Tavernetta, an incredible Italian spot near Union Station."
+  },
+  "expected": {
+    "entities": [
+      { "name": "Red Rocks Amphitheatre", "type": "place" },
+      { "name": "Denver Art Museum", "type": "place" },
+      { "name": "Great Divide Brewing", "type": "place" },
+      { "name": "Mount Falcon Park", "type": "place" },
+      { "name": "Tavernetta", "type": "place" }
+    ]
+  },
+  "queries": [
+    { "text": "best things to do in Denver", "expect_entities": ["Red Rocks Amphitheatre", "Denver Art Museum"] }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "nyc-restaurant",
+  "source": {
+    "platform": "instagram",
+    "permalink": "https://example.com/eval/joes-pizza-reel",
+    "title": "The BEST slice in NYC 🍕",
+    "content": "If you're in New York you HAVE to try Joe's Pizza in Greenwich Village. Classic New York slice, thin crust, perfect sauce. Absolutely the best cheap eat in the city. Open late too."
+  },
+  "expected": {
+    "entities": [
+      { "name": "Joe's Pizza", "type": "place" }
+    ]
+  },
+  "queries": [
+    { "text": "where should I get pizza in New York", "expect_entities": ["Joe's Pizza"] }
+  ]
+}

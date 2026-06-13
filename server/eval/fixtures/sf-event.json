@@ -1,0 +1,18 @@
+{
+  "id": "sf-event",
+  "source": {
+    "platform": "web",
+    "permalink": "https://example.com/eval/sf-jazz-saturday",
+    "title": "Free Outdoor Jazz at Yerba Buena Gardens This Saturday",
+    "content": "Head to Yerba Buena Gardens in San Francisco this Saturday for a free outdoor jazz festival running from 1pm to 6pm. The lineup features local SF artists. Bring a blanket and enjoy the afternoon downtown."
+  },
+  "expected": {
+    "entities": [
+      { "name": "Yerba Buena Gardens", "type": "place" },
+      { "name": "Outdoor Jazz Festival", "type": "event" }
+    ]
+  },
+  "queries": [
+    { "text": "events in SF this Saturday", "expect_entities": ["Yerba Buena Gardens"] }
+  ]
+}

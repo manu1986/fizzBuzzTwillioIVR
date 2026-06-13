@@ -1,0 +1,33 @@
+{
+  "at": "2026-06-13T13:09:53.186Z",
+  "config": {
+    "llm": false,
+    "embeddings": "hash-fallback"
+  },
+  "targets": {
+    "er": 0.85,
+    "f1": 0.6
+  },
+  "entity_resolution": {
+    "accuracy": 0.8571428571428571,
+    "correct": 6,
+    "total": 7,
+    "errors": [
+      {
+        "kind": "should-merge-but-split",
+        "a": "Tavernetta",
+        "b": "Tavernetta Restaurant"
+      }
+    ]
+  },
+  "extraction": {
+    "ran": false,
+    "reason": "no ANTHROPIC_API_KEY",
+    "perFixture": [],
+    "avgF1": null
+  },
+  "queries": {
+    "ran": false,
+    "reason": "pass --full to run end-to-end query eval"
+  }
+}

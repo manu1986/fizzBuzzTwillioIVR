@@ -1,0 +1,14 @@
+{
+  "_comment": "Labeled entity-resolution cases. 'same' pairs SHOULD merge to one canonical entity; 'different' pairs should stay separate. Measures the current ER keying ceiling (plan §6.5 >85% guard). Some 'same' pairs are deliberately hard (abbreviations) to expose the v0 limitation honestly.",
+  "same": [
+    [{ "name": "Red Rocks Amphitheatre", "type": "place" }, { "name": "red rocks amphitheatre", "type": "place" }],
+    [{ "name": "Joe's Pizza", "type": "place" }, { "name": "Joes Pizza", "type": "place" }],
+    [{ "name": "Denver Art Museum", "type": "place" }, { "name": "The Denver Art Museum", "type": "place" }],
+    [{ "name": "Tavernetta", "type": "place" }, { "name": "Tavernetta Restaurant", "type": "place" }]
+  ],
+  "different": [
+    [{ "name": "Joe's Pizza", "type": "place" }, { "name": "Joe's Diner", "type": "place" }],
+    [{ "name": "Red Rocks Amphitheatre", "type": "place" }, { "name": "Denver Art Museum", "type": "place" }],
+    [{ "name": "Mount Falcon Park", "type": "place" }, { "name": "Great Divide Brewing", "type": "place" }]
+  ]
+}

@@ -46,3 +46,26 @@ findings by discipline → **Fixed** in this pass vs **Residual** (tracked for a
 
 ### Verified this pass (no DB required here)
 ✅ all files `node --check`; ✅ app boots, 4 routes + OpenAPI register; ✅ unit tests pass for SSRF guard, relative-date resolver, fingerprint dedup, and generated JSON schemas. ❌ DB-backed flow (ingest + query end-to-end) **unverified** — no Docker daemon in the build sandbox; first run on a real Postgres is the test.
+
+---
+
+## Review R3 — Eval harness (`npm run eval`)
+
+**Panel:** ML/Applied-AI, Data, DevEx.
+
+The harness is the measurement backbone: golden fixtures + a scorer that reports
+**extraction** precision/recall/F1, **entity-resolution keying** accuracy
+(against labeled merge/split cases, vs the §6.5 0.85 guard), and end-to-end
+**query recall** (with `--full` + DB). Runs offline: ER keying always; extraction
+when `ANTHROPIC_API_KEY` is set; query eval with `--full` and a reachable DB.
+`--strict` exits non-zero below target (CI gate). Writes `eval/last-report.json`.
+
+### Findings → Fixed / verified
+- **It immediately surfaced the top risk with a number:** first run reported ER keying **71.4%** (below 0.85), failing on `"The Denver Art Museum"` (leading article) and `"Tavernetta Restaurant"` (suffix). Exactly the v0 limitation, now quantified.
+- **[Fixed] Leading-article normalization.** `normName` now strips a leading `the/a/an` (genuine dedup noise, low false-merge risk). Re-run: ER keying **85.7% — PASS**, with one honest residual. **Verified** by running the harness here.
+
+### Residual (tracked — feeds the ER phase)
+- **`"Tavernetta" vs "Tavernetta Restaurant"` still splits** — needs the real ER subsystem (geocode `place_id` as merge key + embedding/fuzzy similarity), *not* more string hacks. This is the motivation for the next phase.
+- **Golden set is small (3 synthetic fixtures)** — grow per query category, and add fixtures sourced from real (anonymized) shares once a connector path exists.
+- **Extraction + query eval can't run in this sandbox** (no LLM key / no DB). The offline ER number is real; the rest needs a keyed + DB environment.
+- **Eval `erKey` mirrors the pipeline's `(norm_name, type)` keying by hand** — both derive from the shared `normName`, so they move together, but a future ER change must update both.
