@@ -1,0 +1,15 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: curio
+      POSTGRES_PASSWORD: curio
+      POSTGRES_DB: curio
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - curio_pg:/var/lib/postgresql/data
+
+volumes:
+  curio_pg:

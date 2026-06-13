@@ -220,8 +220,8 @@ Resolution keys, strongest first: **geo-anchor via Places API** (name + coords +
 
 | Concern | Choice | Why |
 |---|---|---|
-| Language/runtime | **Python 3.12** | Best Claude SDK + data/ML ergonomics; the workload is LLM/data-heavy |
-| API | **FastAPI** (async) + **Pydantic v2** | Auto **OpenAPI/Swagger** = instant manual test surface (no UI to build); Pydantic models are the *single source of truth* for API contracts **and** Claude structured-output schemas **and** DB validation |
+| Language/runtime | **Node.js 20 (ESM JavaScript)** | Chosen stack. Single language for backend + future web/app glue; strong Anthropic SDK |
+| API | **Fastify** + **Zod** (+ `@fastify/swagger`) | Auto **OpenAPI/Swagger** = instant manual test surface (no UI to build); Zod schemas are the *single source of truth* for API contracts **and** the Claude extraction tool-schema **and** DB validation (Pydantic-equivalent for JS) |
 | Datastore | **Postgres 16 + pgvector + PostGIS** | One store for relational + vector + geo; trivial to inspect/refine; scales far before needing a graph DB (D7) |
 | Object store | **S3 / Cloudflare R2** | Thumbnails & derivatives only (D2) |
 | Queue / workers | **Redis + Arq** (or Postgres `SKIP LOCKED` to skip Redis early) | Durable async pipeline; retries/backoff/DLQ. A `?sync=true` debug mode runs the pipeline inline for easy step-through during refinement |
