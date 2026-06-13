@@ -1,6 +1,7 @@
 import { pool, withTx } from '../db.js';
+import { config } from '../config.js';
 import { resolveConnector } from '../sources/index.js';
-import { extractClaims } from '../llm/anthropic.js';
+import { extractCascade } from './extract.js';
 import { embed } from '../llm/embeddings.js';
 import { geocode } from '../llm/geocode.js';
 import { resolveEntity } from '../entities/resolve.js';
@@ -34,7 +35,12 @@ export async function runExtraction({ src, resolution }) {
   let extraction = null;
   let costUsd = 0;
   let tier = 'heuristic';
-  const llm = await extractClaims({
+
+  // High-value content (saved by many) starts a tier higher.
+  const pop = await pool.query('select count(*)::int as n from user_save where source_id=$1', [src.id]);
+  const startIndex = pop.rows[0].n >= config.extraction.highValueSaves ? 1 : 0;
+
+  const llm = await extractCascade({
     text: resolution.text,
     sourceMeta: {
       title: resolution.title,
@@ -44,11 +50,12 @@ export async function runExtraction({ src, resolution }) {
       description: resolution.description,
       current_date: new Date().toISOString(),
     },
+    startIndex,
   });
   if (llm) {
     extraction = llm.extraction;
     costUsd = llm.costUsd;
-    tier = `T0:${llm.model}`;
+    tier = llm.tier;
   } else {
     extraction = heuristicExtraction(resolution);
   }

@@ -18,9 +18,9 @@ function costOf(model, usage) {
   return (usage.input_tokens / 1e6) * p.in + (usage.output_tokens / 1e6) * p.out;
 }
 
-// T0 extraction. Forces a structured tool call so we always get valid JSON.
-// Returns { extraction, costUsd, model } or null (caller falls back to heuristic).
-export async function extractClaims({ text, sourceMeta }) {
+// T0/T1/T2 extraction at a given model. Forces a structured tool call so we
+// always get valid JSON. Returns { extraction, costUsd, model } or null.
+export async function extractClaims({ text, sourceMeta, model = config.models.extract }) {
   if (!client) return null;
   const system =
     'You extract structured, factual claims from short-form social/web content. ' +
@@ -32,7 +32,7 @@ export async function extractClaims({ text, sourceMeta }) {
     `SOURCE METADATA:\n${JSON.stringify(sourceMeta)}\n\nCONTENT:\n${(text || '').slice(0, 8000)}`;
   try {
     const msg = await client.messages.create({
-      model: config.models.extract,
+      model,
       max_tokens: 2000,
       // Cache the stable system prompt prefix to cut per-item input cost.
       system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
@@ -50,10 +50,10 @@ export async function extractClaims({ text, sourceMeta }) {
     if (!block) return null;
     const parsed = Extraction.safeParse(block.input);
     if (!parsed.success) {
-      logger.warn('extraction_invalid', { issues: parsed.error.issues?.slice(0, 3) });
+      logger.warn('extraction_invalid', { model, issues: parsed.error.issues?.slice(0, 3) });
       return null;
     }
-    return { extraction: parsed.data, costUsd: costOf(config.models.extract, msg.usage), model: config.models.extract };
+    return { extraction: parsed.data, costUsd: costOf(model, msg.usage), model };
   } catch (e) {
     logger.error('extraction_failed', { err: String(e) });
     return null;

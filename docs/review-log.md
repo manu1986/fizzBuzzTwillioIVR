@@ -93,3 +93,27 @@ avg claims/entity).
 - **[Med] Threshold tuned on a tiny set** — grow the labeled ER set and add a **human-in-the-loop review queue** for borderline merges (plan §6.5 calls for HITL on high-value entities).
 - **[Low] Metrics are exposed but not alerted** — wire thresholds (e.g., orphan_rate spike, merge_rate collapse) into monitoring.
 - **DB resolver unverified end-to-end** (no Postgres in sandbox); the pure `entitiesMatch` predicate is verified, and the SQL mirrors it.
+
+---
+
+## Review R5 — Extraction escalation cascade (T0→T1→T2)
+
+**Panel:** ML/Applied-AI, Cost/Finance, SRE.
+
+`pipeline/extract.js`: run T0 (Haiku 4.5), score the result, escalate to T1
+(Sonnet 4.6) then T2 (Opus 4.8) only while confidence < threshold (0.6), keeping
+the best-scoring result and summing cost. High-value sources (saved by ≥ N users)
+start a tier higher. `extractClaims` is now model-parameterized; the eval harness
+runs through the cascade and reports per-fixture tier + cost.
+
+### Findings → Fixed / verified
+- **Confidence scorer gates as intended** — unit-tested: empty extraction 0.00, sparse 0.30 (< 0.6 → escalate), rich 1.00 (→ stop at T0). So cheap/clear content stays on Haiku; thin/ambiguous content escalates. **Verified** here.
+- Best-result-wins across tiers (a higher tier scoring lower can't regress the output).
+
+### Residual (tracked)
+- **[Med] "T2" is Opus-on-text, not yet vision.** Plan §6.3's T2 samples video keyframes (multimodal). Current cascade escalates the *model* but not the *modality* — true frame/vision extraction is a later phase (and needs the on-device/connector media path).
+- **[Med] Confidence threshold is heuristic, not calibrated.** Once a key is available, validate that escalation actually raises eval **F1** (and tune 0.6) — otherwise we may pay for escalation that doesn't help, or stop too early.
+- **[Med] Batch API not used.** Plan calls for the Batch API (−50%) on non-interactive T0/T1; we currently use sync `messages.create`. Move bulk extraction to batches.
+- **[Low] Escalation re-runs from scratch** (no reuse of the T0 output as a hint) — cost of escalating = sum of tiers. Acceptable; could feed the lower tier's draft to the higher tier.
+- **[Low] Virality is sampled once.** Popularity-based start-tier is computed at first processing; a reel that goes viral later won't re-escalate without a reprocess trigger.
+- Extraction-quality lift **unmeasured in this sandbox** (no LLM key); the gating logic is unit-verified and the harness is ready to measure it with a key.

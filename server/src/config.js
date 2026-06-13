@@ -15,4 +15,12 @@ export const config = {
     plan: 'claude-sonnet-4-6',     // query planner (fast, cheap, good enough)
     synthesize: 'claude-opus-4-8', // grounded answer synthesis
   },
+  // Cost-tiered extraction cascade (plan §6.3): escalate only when T0 confidence
+  // is low or the content is high-value (saved by many).
+  extraction: {
+    tiers: ['claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-8'],
+    confidenceThreshold: Number(process.env.EXTRACTION_CONFIDENCE || 0.6),
+    maxTier: 2,
+    highValueSaves: 5, // sources saved by >= N users start a tier higher
+  },
 };

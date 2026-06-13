@@ -1,7 +1,8 @@
 import { readFile, readdir, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { extractClaims, hasLLM } from '../llm/anthropic.js';
+import { hasLLM } from '../llm/anthropic.js';
+import { extractCascade } from '../pipeline/extract.js';
 import { scoreEntities, scoreEr, erKey, entityMatch } from './score.js';
 import { config } from '../config.js';
 
@@ -31,17 +32,19 @@ function uniqueEntities(claims) {
 async function evalExtraction(fixtures) {
   if (!hasLLM()) return { ran: false, reason: 'no ANTHROPIC_API_KEY', perFixture: [], avgF1: null };
   const perFixture = [];
+  let totalCost = 0;
   for (const fx of fixtures) {
-    const llm = await extractClaims({
+    const llm = await extractCascade({
       text: fx.source.content,
       sourceMeta: { title: fx.source.title, platform: fx.source.platform, permalink: fx.source.permalink, current_date: new Date().toISOString() },
     });
     const extracted = llm ? uniqueEntities(llm.extraction.claims) : [];
+    if (llm) totalCost += llm.costUsd;
     const s = scoreEntities(extracted, fx.expected.entities);
-    perFixture.push({ id: fx.id, ...s });
+    perFixture.push({ id: fx.id, tier: llm?.tier || 'none', cost_usd: llm?.costUsd || 0, ...s });
   }
   const avgF1 = perFixture.reduce((a, b) => a + b.f1, 0) / (perFixture.length || 1);
-  return { ran: true, perFixture, avgF1 };
+  return { ran: true, perFixture, avgF1, totalCost };
 }
 
 async function evalQueries(fixtures) {
@@ -112,8 +115,8 @@ async function main() {
   console.log(`\n[Entity resolution keying]  accuracy ${pct(er.accuracy)} (target ${pct(ER_TARGET)})  ${er.accuracy >= ER_TARGET ? 'PASS' : 'BELOW TARGET'}`);
   for (const e of er.errors) console.log(`   - ${e.kind}: "${e.a}" vs "${e.b}"`);
   if (extraction.ran) {
-    console.log(`\n[Extraction]  avg F1 ${pct(extraction.avgF1)} (target ${pct(F1_TARGET)})  ${extraction.avgF1 >= F1_TARGET ? 'PASS' : 'BELOW TARGET'}`);
-    for (const f of extraction.perFixture) console.log(`   ${f.id}: P ${pct(f.precision)} R ${pct(f.recall)} F1 ${pct(f.f1)}${f.misses.length ? `  missed: ${f.misses.join(', ')}` : ''}`);
+    console.log(`\n[Extraction]  avg F1 ${pct(extraction.avgF1)} (target ${pct(F1_TARGET)})  ${extraction.avgF1 >= F1_TARGET ? 'PASS' : 'BELOW TARGET'}  cost $${extraction.totalCost.toFixed(4)}`);
+    for (const f of extraction.perFixture) console.log(`   ${f.id} [${f.tier}]: P ${pct(f.precision)} R ${pct(f.recall)} F1 ${pct(f.f1)}${f.misses.length ? `  missed: ${f.misses.join(', ')}` : ''}`);
   } else {
     console.log(`\n[Extraction]  skipped (${extraction.reason})`);
   }
