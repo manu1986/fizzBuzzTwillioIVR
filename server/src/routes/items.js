@@ -27,9 +27,13 @@ export default async function itemsRoutes(fastify) {
     const uid = userId || config.defaultUserId;
     const fp = fingerprint(url);
 
+    // Re-queue items stuck in 'error' so a transient failure isn't terminal;
+    // leave 'done' untouched (pure fan-out / dedup short-circuit).
     const ins = await pool.query(
       `insert into source(fingerprint, permalink, status) values($1,$2,'queued')
-       on conflict (fingerprint) do update set updated_at = now()
+       on conflict (fingerprint) do update set
+         updated_at = now(),
+         status = case when source.status = 'error' then 'queued' else source.status end
        returning id, status`,
       [fp, normalizeUrl(url)],
     );

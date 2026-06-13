@@ -65,3 +65,9 @@ CREATE TABLE IF NOT EXISTS claim (
 );
 CREATE INDEX IF NOT EXISTS claim_source_idx ON claim (source_id);
 CREATE INDEX IF NOT EXISTS claim_embedding_idx ON claim USING hnsw (embedding vector_cosine_ops);
+
+-- Phase 2: absolute event times for temporal queries ("events this Saturday").
+ALTER TABLE claim ADD COLUMN IF NOT EXISTS event_start timestamptz;
+ALTER TABLE claim ADD COLUMN IF NOT EXISTS event_end   timestamptz;
+CREATE INDEX IF NOT EXISTS claim_event_start_idx ON claim (event_start);
+CREATE INDEX IF NOT EXISTS entity_geo_idx ON entity (lat, lng);

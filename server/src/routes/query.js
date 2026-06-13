@@ -12,12 +12,18 @@ export default async function queryRoutes(fastify) {
           text: { type: 'string' },
           user_id: { type: 'string' },
           scope: { type: 'string', enum: ['mine', 'all'], default: 'mine' },
+          tz: { type: 'string', description: 'IANA timezone for resolving relative dates' },
         },
       },
     },
   }, async (req, reply) => {
-    const { text, user_id: userId, scope } = req.body || {};
+    const { text, user_id: userId, scope, tz } = req.body || {};
     if (!text) return reply.code(400).send({ error: 'text required' });
-    return answerQuery({ question: text, userId: userId || config.defaultUserId, scope: scope || 'mine' });
+    return answerQuery({
+      question: text,
+      userId: userId || config.defaultUserId,
+      scope: scope || 'mine',
+      tz: tz || config.defaultTimezone,
+    });
   });
 }

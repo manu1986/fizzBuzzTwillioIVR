@@ -1,8 +1,17 @@
 import { pool } from './db.js';
 import { processSource } from './pipeline/process.js';
 import { logger } from './lib/logger.js';
+import { migrate } from './db/migrate.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+let running = true;
+for (const sig of ['SIGTERM', 'SIGINT']) {
+  process.once(sig, () => {
+    logger.info('worker_draining', { sig });
+    running = false;
+  });
+}
 
 // Postgres-backed queue via FOR UPDATE SKIP LOCKED — no Redis needed for Phase 0.
 async function claimNext() {
@@ -28,10 +37,13 @@ async function claimNext() {
   }
 }
 
+await migrate();
 logger.info('worker_started');
-// eslint-disable-next-line no-constant-condition
-while (true) {
+while (running) {
   const id = await claimNext();
   if (id) await processSource(id);
   else await sleep(1000);
 }
+await pool.end();
+logger.info('worker_stopped');
+process.exit(0);

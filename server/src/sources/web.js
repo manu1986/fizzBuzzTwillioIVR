@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { detectPlatform } from './connector.js';
+import { safeFetchText } from '../lib/http.js';
 
 // Web / OpenGraph adapter — the safe first rung of the resolution ladder
 // (plan §6.2). Works for articles and gives title/thumbnail/author for most
@@ -9,11 +10,10 @@ export const webConnector = {
   platform: 'web',
   matches: () => true,
   async resolve(url) {
-    const res = await fetch(url, {
+    const res = await safeFetchText(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CurioBot/0.1)' },
-      redirect: 'follow',
     });
-    const html = await res.text();
+    const html = res.text;
     const $ = cheerio.load(html);
     const meta = (sel) => $(sel).attr('content') || null;
     const og = (name) =>
@@ -39,7 +39,7 @@ export const webConnector = {
       site,
       text,
       thumbnail,
-      raw: { httpStatus: res.status, hadOg: Boolean(og('title') || og('description')) },
+      raw: { httpStatus: res.status, bytes: html.length, hadOg: Boolean(og('title') || og('description')) },
     };
   },
 };

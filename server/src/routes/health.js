@@ -3,7 +3,7 @@ import { hasLLM } from '../llm/anthropic.js';
 import { config } from '../config.js';
 
 export default async function healthRoutes(fastify) {
-  fastify.get('/health', async () => {
+  fastify.get('/health', async (request, reply) => {
     let db = false;
     try {
       await pool.query('select 1');
@@ -11,6 +11,7 @@ export default async function healthRoutes(fastify) {
     } catch {
       db = false;
     }
+    if (!db) reply.code(503); // load balancers / readiness probes key on this
     return {
       ok: db,
       db,

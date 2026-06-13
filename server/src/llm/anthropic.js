@@ -1,9 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config.js';
 import { extractionJsonSchema, Extraction } from '../schemas/claims.js';
+import { QueryPlan, queryPlanJsonSchema } from '../schemas/query.js';
 import { logger } from '../lib/logger.js';
 
-const client = config.anthropicApiKey ? new Anthropic({ apiKey: config.anthropicApiKey }) : null;
+const client = config.anthropicApiKey
+  ? new Anthropic({ apiKey: config.anthropicApiKey, maxRetries: 3, timeout: 60_000 })
+  : null;
 export const hasLLM = () => !!client;
 
 const PRICES = {
@@ -22,14 +25,17 @@ export async function extractClaims({ text, sourceMeta }) {
   const system =
     'You extract structured, factual claims from short-form social/web content. ' +
     'Assert only what the content supports. Resolve obvious entity names. ' +
-    'Use null when a field is unknown. Keep claims atomic.';
+    'Use null when a field is unknown. Keep claims atomic. ' +
+    'When the content is about an event, resolve its date to absolute ISO 8601 in ' +
+    'event_start/event_end using the current_date provided in the metadata.';
   const userText =
     `SOURCE METADATA:\n${JSON.stringify(sourceMeta)}\n\nCONTENT:\n${(text || '').slice(0, 8000)}`;
   try {
     const msg = await client.messages.create({
       model: config.models.extract,
       max_tokens: 2000,
-      system,
+      // Cache the stable system prompt prefix to cut per-item input cost.
+      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
       tools: [
         {
           name: 'emit_extraction',
@@ -50,6 +56,45 @@ export async function extractClaims({ text, sourceMeta }) {
     return { extraction: parsed.data, costUsd: costOf(config.models.extract, msg.usage), model: config.models.extract };
   } catch (e) {
     logger.error('extraction_failed', { err: String(e) });
+    return null;
+  }
+}
+
+// Query planner — NL question -> structured QueryPlan (plan §6.9). Returns a
+// validated plan or null (caller falls back to a plain semantic lookup).
+export async function planQuery({ question, now = new Date(), tz = 'UTC' }) {
+  if (!client) return null;
+  const system =
+    "You convert a user's natural-language question about their saved short-form content into a structured query plan.\n" +
+    '- search_text: the core thing to semantically search for.\n' +
+    '- mode: lookup (a specific item), filter (a constrained list), rank (best/top N), compare.\n' +
+    "- ranking: 'best' when the user asks for best/top/most-recommended; 'recent' for latest/newest; else 'relevance'.\n" +
+    '- location: a place name to geocode if the question is geographically scoped, else null. radius_km only if implied.\n' +
+    "- time_relative: phrases like 'this weekend','today','saturday' (prefer over guessing absolute dates), else null.\n" +
+    "- entity_type: restrict if obvious ('events'->event, 'restaurants/places'->place), else 'any'.\n" +
+    "- limit: how many results the user wants ('20 best'->20), else 12, max 50.\n" +
+    `Current date: ${now.toISOString()} (timezone ${tz}).`;
+  try {
+    const msg = await client.messages.create({
+      model: config.models.plan,
+      max_tokens: 600,
+      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+      tools: [{ name: 'emit_plan', description: 'Return the structured query plan.', input_schema: queryPlanJsonSchema }],
+      tool_choice: { type: 'tool', name: 'emit_plan' },
+      messages: [{ role: 'user', content: question }],
+    });
+    const block = msg.content.find((b) => b.type === 'tool_use');
+    if (!block) return null;
+    const parsed = QueryPlan.safeParse(block.input);
+    if (!parsed.success) {
+      logger.warn('plan_invalid', { issues: parsed.error.issues?.slice(0, 3) });
+      return null;
+    }
+    const plan = parsed.data;
+    plan.limit = Math.min(Math.max(plan.limit || 12, 1), 50);
+    return plan;
+  } catch (e) {
+    logger.error('plan_failed', { err: String(e) });
     return null;
   }
 }
