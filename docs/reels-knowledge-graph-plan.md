@@ -6,6 +6,11 @@
 
 This document records (1) a validity assessment of the idea, (2) a multi-disciplinary gap review ("counsel of relevant people"), (3) the decisions that fill those gaps, and (4) a phased feature + implementation plan with a real cost model.
 
+> **Decisions locked (2026-06-13):**
+> 1. **Acquisition = server-resolve/scrape from the shared URL** (Strategy A). The app needs only the URL; the backend resolves content from it for all sources. Simplest and fully generic. *Trade-off accepted with eyes open:* violates IG/TikTok ToS, brittle to their changes, blockable, and carries copyright/CFAA exposure — see §6.2 for the mitigations that keep this survivable and swappable.
+> 2. **iOS first** (Share Extension + later on-device fallback if needed).
+> 3. **Personal scope first** (answers over the user's own saves; community/aggregation deferred behind legal review).
+
 ---
 
 ## 1. Verdict (TL;DR)
@@ -82,7 +87,7 @@ Each "advisor" below is a discipline lens. The **Gap** is what a first-pass plan
 
 | # | Decision | Rationale |
 |---|---|---|
-| D1 | **Acquisition is URL-in, content-out — and the path differs by source.** Receiving the share is always just a URL (no API, uniform across apps). Turning the URL into *content* is the constraint: **(A)** server-resolve/scrape, **(B)** on-device extraction, or **(C, recommended)** hybrid — server-resolve friendly sources (web, YouTube) from the URL; on-device for IG/TikTok/X. *Pending user choice — see §6.2.* | Legal (§3.2), privacy, cost |
+| D1 | **CHOSEN: (A) server-resolve/scrape from the shared URL.** App sends only the URL; backend resolves content for all sources. Generic + simplest. Mitigations (D2, D4, §6.2) keep it swappable and survivable; ToS/IP risk accepted for MVP. | Speed-to-market; "just the URL" |
 | D2 | **Pluggable `SourceConnector` + per-source compliance tier**, legal sign-off gated | Generic across sources, controls risk |
 | D3 | **Ship personal graph first; community layer opt-in & reviewed** | De-risk IP/republishing |
 | D4 | **Content fingerprint = global idempotency key**; process-once, fan-out | Dedup + cost (the core lever) |
@@ -97,9 +102,9 @@ Each "advisor" below is a discipline lens. The **Gap** is what a first-pass plan
 
 ## 5. Feature set (MVP → full)
 
-### MVP (single-user, ship first)
-- iOS Share Extension + Android Send-intent target; instant "Saved ✓".
-- On-device extraction for the top 2 sources (start: **YouTube Shorts + web articles**, which also have permissive metadata APIs; add IG/TikTok via on-device once the on-device pipeline is proven).
+### MVP (single-user, iOS first, ship first)
+- **iOS Share Extension**; instant "Saved ✓" (Android follows post-MVP).
+- **Server-side Resolver** (Strategy A) behind the `SourceConnector` interface, with the resolution ladder + per-source caching/dedup of §6.2. Start with the highest-success sources to prove the loop (web/OpenGraph + YouTube), then add IG/TikTok adapters.
 - Async understanding → claims → personal graph (Postgres + pgvector + PostGIS).
 - NL query over *my* saves with **cited, synthesized** answers + map/list views.
 - Collections ("Denver trip"), auto-categorization, dedup of re-saved content.
@@ -153,12 +158,21 @@ Share extension → App Group container → background upload → **Ingest API**
 | YouTube / Shorts | Official Data API + captions (free tier) | **Low** |
 | Instagram Reels / TikTok / X video | JS-rendered / login-walled → requires scraping/unofficial endpoints | **High (ToS, brittle, blocked, copyright/CFAA)** |
 
-**Three strategies (pick one):**
-- **A — Server-resolve/scrape from URL.** Simplest, fully generic. Violates ToS for IG/TikTok, brittle, blockable, IP exposure. OK for prototype, risky as a business.
-- **B — On-device extraction** (below). Compliant + private + cheap; more engineering; needs the user to have viewed the content.
-- **C — Hybrid (recommended).** Server-resolve web + YouTube from the URL; on-device for IG/TikTok/X. Best coverage/risk tradeoff.
+**Three strategies (A chosen):**
+- **A — Server-resolve/scrape from URL. ✅ CHOSEN.** Simplest, fully generic. Violates ToS for IG/TikTok, brittle, blockable, IP exposure. Accepted for MVP; engineering realities + mitigations below.
+- **B — On-device extraction** (further below). Compliant + private + cheap; more engineering; needs the user to have viewed the content. *Held as the migration target / fallback.*
+- **C — Hybrid.** Server-resolve web + YouTube from the URL; on-device for IG/TikTok/X. *Held as the de-risking path if scraping gets blocked or the product needs to harden.*
 
-#### On-device extraction (strategy B / the IG-TikTok half of C)
+#### Strategy A — server-side resolver (chosen): how to build it to survive
+The backend turns a URL into content. Build it so the risky, brittle part is **isolated, cached, and replaceable**:
+- **Dedicated Resolver service behind the `SourceConnector` interface (D2).** Each platform is one adapter. Swapping a scraper for an official API later (→ Strategy C) is a one-adapter change, no pipeline rewrite.
+- **Resolution ladder per source, cheapest/safest first:** (1) **OpenGraph / `<meta>` tags** (free, allowed — works for web, and gives title/thumbnail/author for most platforms); (2) **oEmbed** for attribution/thumbnail; (3) **official API** where it exists (YouTube captions); (4) **headless/unofficial fetch** only as the last resort for IG/TikTok caption+media.
+- **Dedup is now also the risk lever (D4).** Resolve each `content_fingerprint` **once globally** and cache the result. The 10,000th saver of a viral reel triggers **zero** outbound requests to the platform — this slashes cost *and* the block/ToS footprint.
+- **Resilience:** per-source rate limiting + exponential backoff; treat 4xx/login-walls/HTML changes as expected, degrade gracefully (fall back to OpenGraph-only claims rather than failing the save); circuit-breaker per source; alert when a source's success rate drops (signals they changed their page).
+- **Store derivatives, not copies (D2):** persist extracted claims + thumbnail-by-reference + permalink; don't warehouse creators' video/audio.
+- **Compliance hooks ready:** attribution-forward UI, DMCA/takedown path wired to the versioned store, robots/ToS notes per adapter — so the Strategy C/B migration is incremental, not a rebuild.
+
+#### On-device extraction (strategy B — held as fallback/migration target)
 Runs on the user's device against content already rendered there:
 - **Caption / on-screen text:** OCR (Apple Vision / ML Kit).
 - **Audio:** on-device ASR (Apple Speech / Whisper-tiny) → transcript.
@@ -229,12 +243,12 @@ Pricing per 1M tokens: **Haiku 4.5 $1/$5**, **Sonnet 4.6 $3/$15**, **Opus 4.8 $5
 ## 9. Phased roadmap
 
 **Phase 0 — Foundations & spikes (2–3 wks)**
-- Connector + compliance-tier framework; per-source policy table; legal sign-off on launch sources.
-- On-device extraction spike (OCR + ASR + 1-line VLM) on iOS for one source; prove latency/quality.
+- `SourceConnector` framework + per-source policy/compliance table.
+- **Resolver spike (Strategy A):** OpenGraph/oEmbed/API/headless ladder for 1–2 sources; measure success rate + latency; prove caching/dedup short-circuit.
 - Postgres + pgvector + PostGIS schema; ingest API with fingerprint idempotency.
 
-**Phase 1 — MVP personal graph (4–6 wks)**
-- Share extension + instant save + async pipeline (queue + workers).
+**Phase 1 — MVP personal graph, iOS (4–6 wks)**
+- iOS Share Extension + instant save + async pipeline (queue + workers).
 - T0 extraction (Haiku, structured outputs, batch, caching); claims → graph.
 - Entity resolution v1 (geo-anchor + embeddings); dedup short-circuit.
 - NL query over *my* saves, cited synthesis (Opus), map/list UI; export/delete.
@@ -261,11 +275,12 @@ Pricing per 1M tokens: **Haiku 4.5 $1/$5**, **Sonnet 4.6 $3/$15**, **Opus 4.8 $5
 | Privacy / GDPR-CCPA | Med | Isolation, export/delete, PII minimization, residency option |
 | "Best" overclaim / liability | Low/Med | Honest framing + citations (D10) |
 
+**Resolved:** acquisition = server-resolve/scrape (A); platform = iOS first; scope = personal first.
+
 **Open questions for you (don't block the plan; they tune it):**
-1. **Primary platform** — iOS first, or iOS+Android together? (Share-sheet + on-device stacks differ.)
-2. **Personal vs community scope at launch** — confirm personal-first (recommended) vs. wanting community/aggregation in v1 (raises the §3.2 risk profile).
-3. **Target scale / budget envelope** for the first 6 months (sets infra and model-tier defaults).
-4. **Monetization** (subscription / freemium / B2B) — shapes rate limits, retention, and the community decision.
+1. **Target scale / budget envelope** for the first 6 months (sets infra and model-tier defaults).
+2. **Monetization** (subscription / freemium / B2B) — shapes rate limits, retention, and the eventual community decision.
+3. **Block-resilience appetite** — if IG/TikTok start blocking the resolver, do we invest in scrape hardening (proxies/headless) or pivot those sources to on-device (Strategy B)? (Decide when/if it happens.)
 
 ---
 
