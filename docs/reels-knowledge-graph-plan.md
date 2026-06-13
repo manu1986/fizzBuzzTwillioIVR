@@ -10,6 +10,7 @@ This document records (1) a validity assessment of the idea, (2) a multi-discipl
 > 1. **Acquisition = server-resolve/scrape from the shared URL** (Strategy A). The app needs only the URL; the backend resolves content from it for all sources. Simplest and fully generic. *Trade-off accepted with eyes open:* violates IG/TikTok ToS, brittle to their changes, blockable, and carries copyright/CFAA exposure — see §6.2 for the mitigations that keep this survivable and swappable.
 > 2. **iOS first** (Share Extension + later on-device fallback if needed).
 > 3. **Personal scope first** (answers over the user's own saves; community/aggregation deferred behind legal review).
+> 4. **Server-first, app-later.** Build the full headless pipeline behind a clean API now; test & refine against real URLs; the iOS app becomes a thin client on the stable API later (nothing rebuilt). See §6.8 for the chosen stack.
 
 ---
 
@@ -211,6 +212,39 @@ Resolution keys, strongest first: **geo-anchor via Places API** (name + coords +
 4. **Synthesize** with **Claude Opus 4.8**, grounded strictly in retrieved claims, **with citations** back to source reels. Stream the answer; render a map/list alongside.
 5. Honest framing (D10): *"Most recommended across the content you saved."*
 
+### 6.8 Server-first build architecture (chosen path)
+
+**Shape: an API-first modular monolith + async workers, on a single datastore.** This is the best fit for "test, refine, then build the app on top": fastest iteration, lowest ops, and clean module seams that split into services only when scale demands. The future iOS app is just one more HTTP client — the API is the product surface from day one.
+
+**Stack (chosen; each piece swappable behind an interface):**
+
+| Concern | Choice | Why |
+|---|---|---|
+| Language/runtime | **Python 3.12** | Best Claude SDK + data/ML ergonomics; the workload is LLM/data-heavy |
+| API | **FastAPI** (async) + **Pydantic v2** | Auto **OpenAPI/Swagger** = instant manual test surface (no UI to build); Pydantic models are the *single source of truth* for API contracts **and** Claude structured-output schemas **and** DB validation |
+| Datastore | **Postgres 16 + pgvector + PostGIS** | One store for relational + vector + geo; trivial to inspect/refine; scales far before needing a graph DB (D7) |
+| Object store | **S3 / Cloudflare R2** | Thumbnails & derivatives only (D2) |
+| Queue / workers | **Redis + Arq** (or Postgres `SKIP LOCKED` to skip Redis early) | Durable async pipeline; retries/backoff/DLQ. A `?sync=true` debug mode runs the pipeline inline for easy step-through during refinement |
+| LLM | **Anthropic Python SDK** — Haiku 4.5 (T0) → Sonnet 4.6 (T1) → Opus 4.8 (T2 + query synthesis) | Structured outputs, Batch API (−50% on T0/T1), prompt caching (§6.3, §7) |
+| Embeddings | **Voyage AI** behind an `Embedder` interface (open-source fallback) | Anthropic doesn't serve embeddings; keep it pluggable |
+| Resolver | **httpx + selectolax** (OpenGraph), **YouTube Data API**, **Playwright** (headless, last resort) per-adapter | The §6.2 resolution ladder; one adapter per source |
+| Geo / Places | **Google Places / Mapbox** | Primary entity-resolution anchor (D6) |
+| Packaging | **Docker + docker-compose** locally; Fly.io/Render/AWS later | Refine locally; deploy when ready |
+
+**Module boundaries (one repo, clear seams):** `ingest` · `resolver` (SourceConnectors) · `extractor` (T0/T1/T2 cascade) · `entities` (resolution + dedup) · `graph` (persistence) · `query` (retrieval + synthesis) · `workers` (orchestration) · `eval` (offline harness). Each talks to the next through an interface, so any module can become its own service later without a rewrite.
+
+**API surface (the contract the app will later consume):**
+- `POST /v1/items` `{url, user_id}` → `{item_id, status}` — idempotent on `content_fingerprint`; enqueues the pipeline.
+- `GET  /v1/items/{id}` → status + **full trace** (resolved content → tier used → claims → resolved entities → cost). The trace endpoint is the core refinement tool.
+- `POST /v1/query` `{text, scope, user_id}` → streamed, **cited** synthesis + structured results (map/list).
+- `GET  /v1/entities`, `/v1/collections`, export/delete — round out the surface.
+- A thin **CLI** (`curio submit <url>`, `curio query "..."`) for fast manual testing without any UI.
+
+**Refinement engine (this is what "test & refine" runs on):**
+- **Eval harness** — a golden set of URLs with expected claims/entities; CI runs the pipeline and reports extraction precision/recall, **entity-resolution accuracy** (guard the >85% line), and **cost/item**. Prompt and tier-threshold changes are validated against it.
+- **Per-stage observability + cost attribution** (tokens, tier, latency, cache-hit rate) on every item.
+- **Single dev user** now; the `user_id`/auth seam is already in the API so personal-scope and the future app map in cleanly.
+
 ---
 
 ## 7. Cost model (real Claude pricing, 2026-06)
@@ -242,24 +276,30 @@ Pricing per 1M tokens: **Haiku 4.5 $1/$5**, **Sonnet 4.6 $3/$15**, **Opus 4.8 $5
 
 ## 9. Phased roadmap
 
-**Phase 0 — Foundations & spikes (2–3 wks)**
-- `SourceConnector` framework + per-source policy/compliance table.
-- **Resolver spike (Strategy A):** OpenGraph/oEmbed/API/headless ladder for 1–2 sources; measure success rate + latency; prove caching/dedup short-circuit.
-- Postgres + pgvector + PostGIS schema; ingest API with fingerprint idempotency.
+*(Server-first: Phases 0–3 are the headless backend; the app is Phase 4.)*
 
-**Phase 1 — MVP personal graph, iOS (4–6 wks)**
-- iOS Share Extension + instant save + async pipeline (queue + workers).
-- T0 extraction (Haiku, structured outputs, batch, caching); claims → graph.
-- Entity resolution v1 (geo-anchor + embeddings); dedup short-circuit.
-- NL query over *my* saves, cited synthesis (Opus), map/list UI; export/delete.
-- ER health dashboard from day one.
+**Phase 0 — Skeleton (≈1 wk)**
+- FastAPI + Postgres (pgvector/PostGIS) + Docker compose; `POST /v1/items`, `GET /v1/items/{id}` trace.
+- `SourceConnector` interface + first adapter (web/OpenGraph); fingerprint idempotency; single dev user; CLI stub.
 
-**Phase 2 — V1 depth (4–6 wks)**
-- T1/T2 escalation; IG/TikTok/X via on-device; events + temporal queries; ranking ("best").
-- Hybrid retrieval; add graph layer iff relational queries demand it; notifications.
+**Phase 1 — Core pipeline (≈2–3 wks)**
+- Async worker + queue; resolver ladder for web + YouTube (§6.2 Strategy A) with global caching/dedup.
+- T0 extraction (Haiku, structured outputs, batch, caching) → claims → persistence.
+- **Eval harness v1** (golden URLs → expected claims; precision/recall + cost/item).
 
-**Phase 3 — V2 community (gated)**
-- Opt-in shared catalog, attribution/DMCA, cross-user ranking, public collections — **after** the §3.2 review.
+**Phase 2 — Graph + query (≈2–3 wks)**
+- Entity resolution v1 (geo-anchor + embeddings) + dedup short-circuit; ER health metrics (>85% guard).
+- pgvector + PostGIS retrieval; `POST /v1/query` → Opus synthesis with **citations**; export/delete.
+
+**Phase 3 — Depth & refine (≈2–3 wks)**
+- T1/T2 escalation; IG/TikTok adapters; events + temporal queries; ranking ("best").
+- Batch + caching cost-down; cost/quality dashboards; add graph layer iff relational queries demand it.
+
+**Phase 4 — iOS app (later)**
+- iOS Share Extension as a **thin client** on the stable API; instant "Saved ✓"; map/list UI; notifications. No pipeline rework.
+
+**Phase 5 — V2 community (gated)**
+- Opt-in shared catalog, attribution/DMCA, cross-user ranking, public collections — **after** the §3.2 legal review.
 
 ---
 
