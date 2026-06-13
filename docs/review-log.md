@@ -169,3 +169,29 @@ params dedupe to one entry. Registered ahead of the web catch-all.
 - **[Med] No video/audio understanding** — caption + thumbnail only (text path). True reel comprehension (ASR/OCR/frames) needs the media path (on-device or a media fetch), deferred.
 - **[Med] Block resilience**: no proxy rotation / backoff-on-block / caching of the fetched HTML yet; add before any volume.
 - **Live IG fetch unverified** (sandbox has no/blocked network to IG; IG blocks datacenter IPs anyway). All pure parsing is unit-verified; the network behavior is the real-world unknown.
+
+---
+
+## Review R8 — YouTube connector (Strategy A, no official API)
+
+**Panel:** Backend, ML/Applied-AI, Security, SRE.
+
+`sources/youtube.js`: resolves the watch page (no API key). Parses
+`ytInitialPlayerResponse` (brace-balanced JSON slicer) for title/author/
+description **and the caption-track URL**, then fetches the `timedtext` track and
+parses it into a **real transcript** — far richer than IG's caption-only path,
+which materially improves extraction quality for video. OpenGraph fallback;
+browser UA; SSRF-safe fetch. Pure parsers unit-tested (13 cases). Fingerprint is
+videoId-aware (watch / youtu.be / shorts dedupe). Registered before web.
+
+### Findings → Fixed / verified
+- **[ML] Transcript path** gives spoken content (not just a title) → better claims. **Verified**: `extractYouTubeWatch` pulls videoDetails + en caption URL; `parseTimedText` decodes entities to clean text.
+- **[Data] videoId dedup** across watch/youtu.be/shorts + tracking params. **Verified**.
+- **[SRE] Degrades gracefully** — watch-page or caption failure falls back to OG / minimal record, never throws.
+- **[Security] Reuses `safeFetchText`** for both the page and the caption URL.
+
+### Residual (tracked)
+- **[High — accepted] ToS / brittleness** (same posture as IG): scraping the watch page + `ytInitialPlayerResponse` is unofficial and breaks when YouTube changes markup; datacenter IPs may get consent/bot walls. Isolated behind the connector interface.
+- **[Med] Auto-captions / language**: picks the first `en*` track else the first available; no translation, and auto-generated captions can be noisy. No transcript chunking for very long videos (text capped at 12k chars).
+- **[Med] No bot-wall handling** (cookie consent / "verify you're human") — add detection + fallback before volume.
+- **Live fetch unverified** (no network in sandbox); all parsing is unit-verified.

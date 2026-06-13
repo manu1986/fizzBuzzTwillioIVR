@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { parseInstagramUrl } from './platforms.js';
+import { parseInstagramUrl, parseYouTubeUrl } from './platforms.js';
 
 const TRACKING = /^(utm_|ig_|igsh$|igshid$|fbclid$|gclid$|si$|feature$)/i;
 
@@ -25,6 +25,8 @@ export function normalizeUrl(raw) {
 export function canonicalContentUrl(raw) {
   const ig = parseInstagramUrl(raw);
   if (ig) return ig.canonical;
+  const yt = parseYouTubeUrl(raw);
+  if (yt) return yt.canonical;
   return normalizeUrl(raw);
 }
 
