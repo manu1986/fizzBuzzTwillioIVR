@@ -245,6 +245,34 @@ Resolution keys, strongest first: **geo-anchor via Places API** (name + coords +
 - **Per-stage observability + cost attribution** (tokens, tier, latency, cache-hit rate) on every item.
 - **Single dev user** now; the `user_id`/auth seam is already in the API so personal-scope and the future app map in cleanly.
 
+### 6.9 Is a knowledge graph the right approach? How queries get answered
+
+**Honest framing of the goal.** No architecture answers *all* queries *perfectly*. Two hard ceilings: (1) **coverage is bounded by the corpus** — nothing answers "best in Denver" if no saved item mentions Denver; (2) a system that always answers confidently **hallucinates**. The target is therefore: **correct, grounded (every claim cites a source), honest about gaps, never fabricated** — with coverage pushed up methodically via the eval loop. "Perfect" → "correct, cited, knows its limits, improves over time."
+
+**"Knowledge graph" is half-right.** Decomposing the real query space shows most queries are *not* graph traversal:
+
+| Query type | Example | Primitive that answers it |
+|---|---|---|
+| Recall / lookup | "that pasta place from the food reel" | Semantic (vector) search |
+| Filtered retrieval | "events in SF this Saturday" | Structured filter (geo+time) — SQL/PostGIS |
+| Aggregation / ranking | "20 best things to do in Denver" | Group-by-entity + rank (support, sentiment, recency) |
+| Multi-hop / relational | "places a creator I follow recommended near my hotel" | **Graph traversal** (the real graph case) |
+| Comparison / synthesis | "compare the two hotels people raved about" | Retrieve both → LLM synthesize |
+| Open / exploratory | "what should I do this weekend" | Query decomposition → several of the above |
+
+Only the multi-hop row truly needs a graph. So a pure graph DB on day one is **over-engineering** (D7). What's actually required is a **canonical, deduplicated, *typed* knowledge layer** — claims `(entity, attribute, geo, time, sentiment, source)` with entities resolved to canonical IDs. Storing it as graph edges is an implementation detail deferred until relational queries prove it's needed.
+
+**The answer mechanism: an agentic query planner over a retrieval toolbox.**
+1. **LLM planner** (Claude) decomposes the NL query → intent, geo/time filters, ranking, scope.
+2. It calls **retrieval primitives as tools:** `semantic_search` (vector), `structured_filter` (SQL/PostGIS), `aggregate_rank`, `graph_traverse` (when the graph layer exists), `entity_lookup`.
+3. It **synthesizes a grounded, cited answer** strictly from retrieved claims — never from model memory.
+
+The structured layer makes the tools precise; the LLM is the **routing + reasoning** layer, not the source of truth. This is what lets one system span the whole table above.
+
+**What actually determines answer quality** (not "graph vs no graph"): (1) **extraction completeness**, (2) **entity resolution/dedup** (>85% line, geo-anchored), (3) **query planning/routing**. The graph layer is a late, additive optimization for the multi-hop minority.
+
+**Driving toward "any query":** maintain a **query-taxonomy eval set** (golden Q/A per category) → measure answer accuracy + grounding per category → refine the weakest. Coverage climbs measurably instead of by hope.
+
 ---
 
 ## 7. Cost model (real Claude pricing, 2026-06)
