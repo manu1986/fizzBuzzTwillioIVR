@@ -2,6 +2,7 @@ import { pool } from './db.js';
 import { processSource } from './pipeline/process.js';
 import { logger } from './lib/logger.js';
 import { migrate } from './db/migrate.js';
+import { closeBrowser } from './lib/browser.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -44,6 +45,7 @@ while (running) {
   if (id) await processSource(id);
   else await sleep(1000);
 }
+await closeBrowser();
 await pool.end();
 logger.info('worker_stopped');
 process.exit(0);

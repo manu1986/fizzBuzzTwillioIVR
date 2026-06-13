@@ -15,6 +15,14 @@ export const config = {
     max: Number(process.env.RATE_LIMIT_MAX || 120),
     windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60000),
   },
+  // Stealth headless-browser fallback for login/bot-walled pages (IG/YouTube).
+  // Off by default; needs playwright-extra + a stealth plugin installed.
+  // BROWSER_PROXY (ideally a residential proxy) is what actually evades blocks at scale.
+  browser: {
+    fallback: process.env.BROWSER_FALLBACK === 'true',
+    proxy: process.env.BROWSER_PROXY || '',
+    timeoutMs: Number(process.env.BROWSER_TIMEOUT_MS || 20000),
+  },
   embeddingDim: 1024,
   // Cost-tiered cascade (see plan §6.3). Phase 0 wires T0 + synthesis.
   models: {

@@ -2,6 +2,7 @@ import { buildApp } from './app.js';
 import { config } from './config.js';
 import { logger } from './lib/logger.js';
 import { migrate } from './db/migrate.js';
+import { closeBrowser } from './lib/browser.js';
 
 try {
   await migrate();
@@ -13,6 +14,7 @@ try {
     process.once(sig, async () => {
       logger.info('api_shutting_down', { sig });
       await app.close();
+      await closeBrowser();
       process.exit(0);
     });
   }

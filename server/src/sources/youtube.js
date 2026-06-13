@@ -1,7 +1,15 @@
 import * as cheerio from 'cheerio';
 import { parseYouTubeUrl } from '../lib/platforms.js';
 import { safeFetchText } from '../lib/http.js';
+import { getHtml } from '../lib/fetchHtml.js';
 import { logger } from '../lib/logger.js';
+
+// Detect a YouTube consent/bot wall or a page missing the player JSON.
+export function isBlockedYouTube(html) {
+  if (!html) return true;
+  if (/consent\.youtube\.com|Before you continue to YouTube|sign in to confirm/i.test(html)) return true;
+  return !/ytInitialPlayerResponse/.test(html);
+}
 
 const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -92,7 +100,7 @@ export const youtubeConnector = {
 
     let meta = { title: null, author: null, description: null, thumbnail: null, captionUrl: null };
     try {
-      const res = await safeFetchText(permalink, { headers });
+      const res = await getHtml(permalink, { headers, isBlocked: isBlockedYouTube });
       meta = extractYouTubeWatch(res.text);
     } catch (err) {
       logger.warn('yt_watch_failed', { url: permalink, err: String(err) });

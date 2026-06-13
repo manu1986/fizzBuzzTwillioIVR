@@ -1,7 +1,15 @@
 import * as cheerio from 'cheerio';
 import { parseInstagramUrl } from '../lib/platforms.js';
-import { safeFetchText } from '../lib/http.js';
+import { getHtml } from '../lib/fetchHtml.js';
 import { logger } from '../lib/logger.js';
+
+// Detect an Instagram login/consent wall or a content-less page (triggers the
+// stealth-browser fallback when enabled).
+export function isBlockedInstagram(html) {
+  if (!html) return true;
+  if (/\/accounts\/login\//.test(html) || /loginForm|Log in(?:to| to see)|Log into Instagram/i.test(html)) return true;
+  return !/og:title/i.test(html) && !/class="?Caption/i.test(html);
+}
 
 const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -55,24 +63,24 @@ export const instagramConnector = {
     // Strategy 1: embed/captioned (most reliable no-auth caption).
     if (ig) {
       try {
-        const res = await safeFetchText(ig.embed, { headers });
+        const res = await getHtml(ig.embed, { headers, isBlocked: isBlockedInstagram });
         const e = extractFromEmbed(res.text);
         ({ caption, author, thumbnail } = e);
-        if (caption) strategy = 'embed';
+        if (caption) strategy = res.rendered ? 'embed+render' : 'embed';
       } catch (err) {
         logger.warn('ig_embed_failed', { url: permalink, err: String(err) });
       }
     }
 
-    // Strategy 2: OpenGraph from the canonical page.
+    // Strategy 2: OpenGraph from the canonical page (browser fallback if walled).
     if (!caption || !thumbnail || !author) {
       try {
-        const res = await safeFetchText(permalink, { headers });
+        const res = await getHtml(permalink, { headers, isBlocked: isBlockedInstagram });
         const o = extractFromOg(res.text);
         caption = caption || o.caption;
         author = author || o.author;
         thumbnail = thumbnail || o.thumbnail;
-        if (strategy === 'none' && caption) strategy = 'og';
+        if (strategy === 'none' && caption) strategy = res.rendered ? 'og+render' : 'og';
       } catch (err) {
         logger.warn('ig_og_failed', { url: permalink, err: String(err) });
       }

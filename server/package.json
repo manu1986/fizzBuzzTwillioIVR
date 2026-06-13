@@ -25,5 +25,10 @@
     "undici": "^6.26.0",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.23.2"
+  },
+  "optionalDependencies": {
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "playwright": "^1.45.0"
   }
 }

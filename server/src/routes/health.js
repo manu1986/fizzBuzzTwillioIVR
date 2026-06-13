@@ -1,5 +1,6 @@
 import { pool } from '../db.js';
 import { hasLLM } from '../llm/anthropic.js';
+import { browserAvailable } from '../lib/browser.js';
 import { config } from '../config.js';
 
 export default async function healthRoutes(fastify) {
@@ -17,6 +18,7 @@ export default async function healthRoutes(fastify) {
       db,
       llm: hasLLM(),
       embeddings: config.voyageApiKey ? 'voyage' : 'hash-fallback',
+      browser_fallback: config.browser.fallback && (await browserAvailable()),
     };
   });
 }

@@ -195,3 +195,34 @@ videoId-aware (watch / youtu.be / shorts dedupe). Registered before web.
 - **[Med] Auto-captions / language**: picks the first `en*` track else the first available; no translation, and auto-generated captions can be noisy. No transcript chunking for very long videos (text capped at 12k chars).
 - **[Med] No bot-wall handling** (cookie consent / "verify you're human") — add detection + fallback before volume.
 - **Live fetch unverified** (no network in sandbox); all parsing is unit-verified.
+
+---
+
+## Review R9 — Stealth headless-browser fallback
+
+**Panel:** Backend, Security, SRE, Legal/ToS.
+
+Added a **fallback** rendering path (`lib/browser.js` + `lib/fetchHtml.js`):
+cheap HTTP first, escalate to a **stealth headless browser** (`playwright-extra`
++ `puppeteer-extra-plugin-stealth`) only when a page is login/bot-walled or empty.
+Feature-flagged (`BROWSER_FALLBACK`), **lazy-loaded** (optional deps — app runs
+without them), residential-proxy support (`BROWSER_PROXY`), SSRF-guarded
+(pre-nav literal-IP check + per-request route abort to private hosts/non-http),
+shared browser closed on shutdown, surfaced in `/health`. IG/YouTube connectors
+now fetch via `getHtml` with per-platform block predicates; resolution tags
+`embed+render` / `og+render` when the browser was used.
+
+### Findings → Fixed / verified
+- **Cost-aware**: a browser is only launched when a plain fetch is blocked — no browser per request. **Verified**: `getHtml` returns the HTTP result and never launches when `BROWSER_FALLBACK=false`.
+- **Graceful absence**: `browserAvailable()` is false (playwright not installed) and `getHtml` degrades without throwing. **Verified** here.
+- **Block predicates** (`isBlockedInstagram` / `isBlockedYouTube`) unit-tested (login/consent walls + content-less pages → blocked; good pages → not).
+- **SSRF**: browser pre-checks the nav host and aborts sub-requests to private/literal-IP/non-http.
+
+### Residual (tracked) — and an honest reality check
+- **"Undetectable" is aspirational, not guaranteed.** Stealth reduces fingerprinting but doesn't defeat modern anti-bot (Meta/Google). The real lever is a **residential proxy** (`BROWSER_PROXY`) + low request rates; datacenter IPs get walled even with a headless browser.
+- **Instagram reels often require an authenticated session** even in a browser — public render may still hit a login wall. Logged-in cookie/session injection + CAPTCHA handling are **not** implemented (and raise their own ToS/account-ban issues).
+- **YouTube consent wall** isn't auto-dismissed (no consent-cookie/click flow yet) — would need a small interaction step.
+- **Resource safety**: one shared browser, a context per call, but **no concurrency cap/pool** — under load this can exhaust memory. Add a semaphore/context pool before volume.
+- **Browser route guard is literal-IP only** — a sub-request to a hostname that resolves private isn't blocked at connect; enforce egress via the proxy/allowlist for hard isolation.
+- **[Legal] Rendering doesn't change the ToS posture** — still scraping (Strategy A), now harder to detect. Same accepted-risk + swappable-connector stance.
+- **Unverified end-to-end**: playwright isn't installed/runnable in this sandbox (no browser binaries / no network). All glue (flagging, lazy-load, SSRF pre-check, block predicates, graceful degrade) is verified; the actual render + evasion is the real-world unknown. Install: `npm i playwright-extra puppeteer-extra-plugin-stealth playwright && npx playwright install chromium`.
